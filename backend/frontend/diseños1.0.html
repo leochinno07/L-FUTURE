@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Diseños - L-FUTURE</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- Estilos para Notificaciones Toast -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/izitoast/dist/css/iziToast.min.css">
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script src="api.js"></script>
+    <script src="idiomas.js"></script>
+    <script src="user-ui.js"></script>
+</head>
+    <script>
+        // --- Exportar Proyecto (PNG/JSON) ---
+function exportarProyecto(proyectoId, tipo) {
+    const proyecto = todosLosProyectos.find(p => p.id === proyectoId);
+    if (!proyecto) return Toast.error('Proyecto no encontrado');
+    if (tipo === 'json') {
+        const dataStr = JSON.stringify(proyecto, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `proyecto_${proyecto.nombre}.json`;
+        a.click();
+        Toast.success('Proyecto exportado como JSON');
+    } else if (tipo === 'png') {
+        // Simulación: exporta la tarjeta como imagen
+        const card = document.querySelector(`[data-proyecto-id='${proyectoId}']`);
+        if (!card) return Toast.error('No se encontró la tarjeta');
+        html2canvas(card).then(canvas => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `proyecto_${proyecto.nombre}.png`;
+            a.click();
+            Toast.success('Proyecto exportado como PNG');
+        });
+    }
+};
+
+// ============================================================================
+// VARIABLES GLOBALES
+// ============================================================================
+
+let todosLosProyectos = [];
+let proyectosFiltrados = [];
+let paginaActual = 1;
+
+const filtros = {
+    termino: '',
+    estado: 'todos',
+    tag: 'todos',
+    orden: 'fecha_modificacion-desc'
+};
+
+const proyectosPorPagina = 10;
+let todasLasEtiquetas = new Set();
+let ordenActual = 'fecha-desc';
+
+// ============================================================================
+// #6 INDICADORES DE CARGA
+// ============================================================================
+
+function mostrarCargando() {
+    const contenedor = document.getElementById('contenedor-proyectos');
+    if (contenedor) {
+        let skeletonHTML = '';
+        for (let i = 0; i < proyectosPorPagina; i++) {
+            skeletonHTML += `
+                <div class="tarjeta-proyecto-skeleton">
+                    <div class="skeleton-img"></div>
+                    <div class="skeleton-text"></div>
+                    <div class="skeleton-text short"></div>
+                </div>`;
+        }
+        contenedor.innerHTML = skeletonHTML;
+    }
+}
+
+// ============================================================================
+// #1 SISTEMA DE BÚSQUEDA
+// ============================================================================
+
+// Debounce para búsqueda
+let debounceTimeout;
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- Load/apply user config on page load ---
+    const userConfig = JSON.parse(localStorage.getItem('user_config') || '{}');
+    if (userConfig.tema) {
+        Temas?.aplicar(userConfig.tema);
+        const selectorTema = document.getElementById('selectorTema');
+        if (selectorTema) selectorTema.value = userConfig.tema;
+    }
+    if (userConfig.idioma) {
+        // For demo: show toast, in real app switch language
+        Toast.info('Idioma preferido: ' + userConfig.idioma);
+        const configIdioma = document.getElementById('configIdioma');
+        if (configIdioma) configIdioma.value = userConfig.idioma;
+    }
+    // --- Tag management UI logic ---
+    const editTagsInput = document.getElementById('editTagsProyecto');
+    const tagsListDiv = document.getElementById('tagsList');
+    const btnAddTag = document.getElementById('btnAddTag');
+    function renderTagsList() {
+        if (!tagsListDiv || !editTagsInput) return;
+        tagsListDiv.innerHTML = '';
+        const tags = editTagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+        tags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'tag-proyecto tag-edit';
+            span.textContent = tag;
+            span.title = 'Haz clic para eliminar';
+            span.style = 'background:#FFD700;color:#222;padding:4px 10px;border-radius:12px;cursor:pointer;font-weight:bold;margin-bottom:4px;';
+            span.onclick = function() {
+                const newTags = tags.filter(t => t !== tag);
+                editTagsInput.value = newTags.join(', ');
+                renderTagsList();
+                Toast.info('Etiqueta eliminada: ' + tag);
+            };
+            tagsListDiv.appendChild(span);
+        });
+        if (tags.length === 0) {
+            tagsListDiv.innerHTML = '<span style="color:#999;font-size:13px;">Sin etiquetas</span>';
+        }
+    }
+    if (editTagsInput) {
+        editTagsInput.addEventListener('input', renderTagsList);
+    }
+    if (btnAddTag) {
+        btnAddTag.onclick = function() {
+            if (!editTagsInput) return;
+            let val = editTagsInput.value;
+            const newTag = prompt('Nueva etiqueta:');
+            if (newTag && newTag.trim()) {
+                const tags = val.split(',').map(t => t.trim()).filter(t => t);
+                if (!tags.includes(newTag.trim())) {
+                    tags.push(newTag.trim());
+                    editTagsInput.value = tags.join(', ');
+                    renderTagsList();
+                    Toast.success('Etiqueta agregada: ' + newTag.trim());
+                } else {
+                    Toast.info('La etiqueta ya existe.');
+                }
+            }
+        };
+    }
+    renderTagsList();
+    const inputBusqueda = document.getElementById('inputBusqueda');
+    if (inputBusqueda) {
+        inputBusqueda.setAttribute('title', 'Buscar proyectos por nombre o descripción');
+        inputBusqueda.addEventListener('input', function(e) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                filtros.termino = e.target.value;
+                renderizarProyectos();
+            }, 350);
+        });
+    }
+
+    // Tooltips para controles
+    document.getElementById('selectEstado')?.setAttribute('title', 'Filtrar por estado del proyecto');
+    document.getElementById('selectTag')?.setAttribute('title', 'Filtrar por etiqueta');
+    document.getElementById('selectOrdenar')?.setAttribute('title', 'Ordenar proyectos');
+    document.getElementById('btnRefrescar')?.setAttribute('title', 'Recargar proyectos (R)');
+    document.getElementById('btnNuevoProyecto')?.setAttribute('title', 'Crear nuevo proyecto (Ctrl+N)');
+});
+
+// ============================================================================
+// #2 PAGINACIÓN
+// ============================================================================
+
+function cambiarPagina(direccion) {
+    const totalPaginas = Math.ceil(proyectosFiltrados.length / proyectosPorPagina);
+
+    if (direccion === 'anterior' && paginaActual > 1) {
+        paginaActual--;
+    } else if (direccion === 'siguiente' && paginaActual < totalPaginas) {
+        paginaActual++;
+    }
+
+    renderizarProyectos();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function irAPagina(pagina) {
+    const totalPaginas = Math.ceil(proyectosFiltrados.length / proyectosPorPagina);
+    if (pagina >= 1 && pagina <= totalPaginas) {
+        paginaActual = pagina;
+        renderizarProyectos();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function renderizarPaginacion() {
+    const totalPaginas = Math.ceil(proyectosFiltrados.length / proyectosPorPagina);
+    const contenedorPaginacion = document.getElementById('paginacion');
+
+    if (!contenedorPaginacion || totalPaginas <= 1) {
+        if (contenedorPaginacion) contenedorPaginacion.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="controles-paginacion">';
+
+    // Botón anterior
+    const idioma = (JSON.parse(localStorage.getItem('user_config')||'{}').idioma)||'es';
+    html += `<button onclick="cambiarPagina('anterior')" class="btn-paginacion" ${paginaActual === 1 ? 'disabled' : ''} title="${LFUTURE_getTraduccion(idioma,'paginaAnterior')}">
+        <i class="fas fa-chevron-left"></i> ${LFUTURE_getTraduccion(idioma,'anterior')}
+    </button>`;
+
+    // Números de página
+    html += '<div class="numeros-pagina">';
+
+    for (let i = 1; i <= totalPaginas; i++) {
+        if (i === 1 || i === totalPaginas || (i >= paginaActual - 1 && i <= paginaActual + 1)) {
+            html += `<button onclick="irAPagina(${i})" class="btn-numero-pagina ${i === paginaActual ? 'activo' : ''}" title="${LFUTURE_getTraduccion(idioma,'irAPagina')} ${i}">${i}</button>`;
+        } else if (i === paginaActual - 2 || i === paginaActual + 2) {
+            html += '<span class="puntos-paginacion">...</span>';
+        }
+    }
+
+    html += '</div>';
+
+    // Botón siguiente
+    html += `<button onclick="cambiarPagina('siguiente')" class="btn-paginacion" ${paginaActual === totalPaginas ? 'disabled' : ''} title="${LFUTURE_getTraduccion(idioma,'paginaSiguiente')}">
+        ${LFUTURE_getTraduccion(idioma,'siguiente')} <i class="fas fa-chevron-right"></i>
+    </button>`;
+
+    html += `<span class="info-paginacion">${LFUTURE_getTraduccion(idioma,'pagina')} ${paginaActual} ${LFUTURE_getTraduccion(idioma,'de')} ${totalPaginas}</span>`;
+    html += '</div>';
+
+    contenedorPaginacion.innerHTML = html;
+}
+
+// ============================================================================
+// CARGAR PROYECTOS DESDE API
+// ============================================================================
+
+async function cargarTodosLosProyectos() {
+    const contenedorProyectos = document.getElementById('contenedor-proyectos');
+
+    if (!contenedorProyectos) return;
+
+    mostrarCargando();
+
+    const [sortBy, sortOrder] = filtros.orden.split('-');
+
+    try {
+        const response = await getProyectos(sortBy, sortOrder);
+
+        if (response.success && response.data.success) {
+            todosLosProyectos = response.data.proyectos || [];
+            actualizarListaDeTags();
+
+            if (todosLosProyectos.length === 0) {
+                mostrarMensajeSinProyectos(contenedorProyectos);
+            } else {
+                renderizarVista(); // Usar la nueva función centralizada
+                Toast.success(`${todosLosProyectos.length} proyecto${todosLosProyectos.length !== 1 ? 's' : ''} cargado${todosLosProyectos.length !== 1 ? 's' : ''}`);
+            }
+
+            actualizarContador();
+        } else {
+            mostrarMensajeSinProyectos(contenedorProyectos);
+        }
+    } catch (error) {
+        console.error('Error al cargar proyectos:', error);
+        Toast.error('Error al cargar proyectos. Verifica tu conexión.');
+        contenedorProyectos.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ff6b6b;"><i class="fas fa-exclamation-circle" style="font-size: 48px;"></i><p style="margin-top: 20px;">Error al cargar proyectos</p></div>';
+    }
+}
+
+function actualizarListaDeTags() {
+    todasLasEtiquetas.clear();
+    todosLosProyectos.forEach(proyecto => {
+        if (proyecto.tags) {
+            proyecto.tags.split(',').forEach(tag => {
+                if (tag.trim()) todasLasEtiquetas.add(tag.trim());
+            });
+        }
+    });
+
+    const selectTag = document.getElementById('selectTag');
+    if (selectTag) {
+        // Guardar la opción "Todas" y limpiar
+        const primeraOpcion = selectTag.options[0];
+        selectTag.innerHTML = '';
+        selectTag.appendChild(primeraOpcion);
+        todasLasEtiquetas.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag;
+            option.textContent = tag;
+            selectTag.appendChild(option);
+        });
+    }
+}
+// ============================================================================
+// RENDERIZAR PROYECTOS CON PAGINACIÓN
+// ============================================================================
+
+/**
+ * Aplica todos los filtros y ordenamientos, y renderiza el resultado.
+ * Esta función centraliza la lógica de renderizado.
+ */
+function renderizarVista() {
+    let resultado = [...todosLosProyectos];
+
+    // 1. Filtrar por término de búsqueda
+    if (filtros.termino) {
+        const terminoLower = filtros.termino.toLowerCase();
+        resultado = resultado.filter(p =>
+            (p.nombre || '').toLowerCase().includes(terminoLower) ||
+            (p.descripcion || '').toLowerCase().includes(terminoLower)
+        );
+    }
+
+    // 2. Filtrar por estado
+    if (filtros.estado !== 'todos') {
+        resultado = resultado.filter(p => p.estado === filtros.estado);
+    }
+
+    // 3. Filtrar por tag
+    if (filtros.tag !== 'todos') {
+        resultado = resultado.filter(p => (p.tags || '').split(',').map(t => t.trim()).includes(filtros.tag));
+    }
+
+    proyectosFiltrados = resultado;
+    paginaActual = 1;
+    renderizarProyectos();
+}
+
+function renderizarProyectos() {
+    const contenedor = document.getElementById('contenedor-proyectos');
+
+    if (!contenedor) return;
+
+    // Calcular índices de paginación
+    const inicio = (paginaActual - 1) * proyectosPorPagina;
+    const fin = inicio + proyectosPorPagina;
+    const proyectosPagina = proyectosFiltrados.slice(inicio, fin);
+
+    contenedor.innerHTML = '';
+
+    if (proyectosPagina.length === 0) {
+        const idioma = (JSON.parse(localStorage.getItem('user_config')||'{}').idioma)||'es';
+        contenedor.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 20px; color: #999;"><i class="fas fa-search" style="font-size: 48px; color: #FFD700; opacity: 0.5;"></i><p style="margin-top: 20px;">${LFUTURE_getTraduccion(idioma,'noProyectos')}</p></div>`;
+        renderizarPaginacion();
+        return;
+    }
+
+    proyectosPagina.forEach(proyecto => {
+        const div = document.createElement('div');
+        div.className = 'tarjeta-proyecto';
+        div.setAttribute('data-proyecto-id', proyecto.id);
+        div.innerHTML = crearTarjetaProyectoHTML(proyecto);
+
+        contenedor.appendChild(div);
+    });
+
+    renderizarPaginacion();
+    actualizarContador();
+}
+
+/**
+ * Genera el HTML para una única tarjeta de proyecto.
+ * @param {object} proyecto - El objeto del proyecto.
+ * @returns {string} - El string HTML de la tarjeta.
+ */
+function crearTarjetaProyectoHTML(proyecto) {
+    const idioma = (JSON.parse(localStorage.getItem('user_config') || '{}').idioma) || 'es';
+    const badge = proyecto.estado === 'completado' ? 'badge-completado' : 'badge-progreso';
+    const estadoTexto = proyecto.estado === 'completado' ? 'Completado' : 'En Progreso';
+    const colorPrenda = proyecto.color_prenda || '#1a1a1a';
+    const fecha = new Date(proyecto.fecha_creacion).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+
+    const tagsHtml = (proyecto.tags || '')
+        .split(',')
+        .filter(tag => tag.trim() !== '')
+        .map(tag => `<span class="tag-proyecto">${tag.trim()}</span>`)
+        .join('');
+
+    const imgHtml = proyecto.thumbnail_url ? `<img src="${proyecto.thumbnail_url}" alt="${escapeHtml(proyecto.nombre)}" style="display:block;width:100%;height:300px;object-fit:cover;border-radius:6px;" />` : `<svg viewBox="0 0 200 220" width="100%" height="300" preserveAspectRatio="xMidYMid meet" style="display:block;">
+                <path d="M30 40 C30 20, 70 20, 75 40 L85 40 C90 20, 130 20, 130 40 L170 40 C170 80, 160 80, 150 100 L150 170 C150 190, 120 200, 100 200 C80 200, 50 190, 50 170 L50 100 C40 80, 30 80, 30 40 Z"
+                      fill="${colorPrenda}" stroke="#222" stroke-width="2" rx="6" />
+                <text x="50%" y="62%" text-anchor="middle" fill="#FFD700" font-size="14" font-weight="700" style="pointer-events:none;">${escapeHtml(proyecto.nombre)}</text>
+            </svg>`;
+
+    return `
+        <div class="imagen-proyecto" role="button" tabindex="0" aria-label="Vista previa de ${proyecto.nombre}" onclick="abrirVistaPrevia(${proyecto.id}, ${JSON.stringify(proyecto.nombre)}, '${colorPrenda}')">
+            ${imgHtml}
+            <div class="estado-badge" aria-hidden="true">
+                <span class="badge ${badge}">${estadoTexto}</span>
+            </div>
+        </div>
+        <div class="contenido-proyecto">
+            <h3>${proyecto.nombre}</h3>
+            <p class="descripcion">${proyecto.descripcion || LFUTURE_getTraduccion(idioma, 'sinDescripcion')}</p>
+            <div class="info-adicional">
+                <span title="Fecha de creación"><i class="fas fa-calendar"></i> ${fecha}</span>
+                <span title="Talla de la prenda"><i class="fas fa-tshirt"></i> ${proyecto.talla || LFUTURE_getTraduccion(idioma, 'na')}</span>
+                <span title="Color de la prenda" style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-palette"></i>
+                    <div style="width: 20px; height: 20px; background: ${colorPrenda}; border-radius: 50%; border: 2px solid #666;"></div>
+                </span>
+            </div>
+            <div class="tags-container">
+                ${tagsHtml || `<span class="no-tags">${LFUTURE_getTraduccion(idioma, 'sinEtiquetas')}</span>`}
+            </div>
+            <div class="acciones-proyecto">
+                <button class="btn-accion btn-editar" onclick="abrirModalEditar(${proyecto.id})" title="${LFUTURE_getTraduccion(idioma, 'editarNombreEtiquetas')}"><i class="fas fa-edit"></i> ${LFUTURE_getTraduccion(idioma, 'editar')}</button>
+                <button class="btn-accion btn-abrir" onclick="abrirEnDisenador(${proyecto.id})" title="${LFUTURE_getTraduccion(idioma, 'abrirEnDisenador')}"><i class="fas fa-paint-brush"></i> ${LFUTURE_getTraduccion(idioma, 'abrir')}</button>
+                <button class="btn-accion btn-exportar" onclick="exportarProyecto(${proyecto.id}, 'png')" title="${LFUTURE_getTraduccion(idioma, 'exportarPNG')}"><i class="fas fa-file-image"></i> PNG</button>
+                <button class="btn-accion btn-exportar" onclick="exportarProyecto(${proyecto.id}, 'json')" title="${LFUTURE_getTraduccion(idioma, 'exportarJSON')}"><i class="fas fa-file-code"></i> JSON</button>
+                <button class="btn-accion btn-duplicar" onclick="duplicarProyecto(${proyecto.id})" title="${LFUTURE_getTraduccion(idioma, 'duplicarProyecto')}"><i class="fas fa-copy"></i> ${LFUTURE_getTraduccion(idioma, 'duplicar')}</button>
+                <div class="dropdown-acciones">
+                    <button class="btn-accion btn-mas" title="${LFUTURE_getTraduccion(idioma, 'masAcciones')}"><i class="fas fa-ellipsis-v"></i></button>
+                    <div class="dropdown-contenido">
+                        <a href="#" onclick="duplicarProyecto(${proyecto.id})"><i class="fas fa-copy"></i> ${LFUTURE_getTraduccion(idioma, 'duplicar')}</a>
+                        <a href="#" onclick="exportarProyecto(${proyecto.id}, 'png')"><i class="fas fa-file-image"></i> ${LFUTURE_getTraduccion(idioma, 'exportarPNG')}</a>
+                        <a href="#" onclick="exportarProyecto(${proyecto.id}, 'json')"><i class="fas fa-file-code"></i> ${LFUTURE_getTraduccion(idioma, 'exportarJSON')}</a>
+                    </div>
+                </div>
+                 <button class="btn-accion btn-eliminar" onclick="eliminarProyecto(${proyecto.id}, '${proyecto.nombre}')" title="${LFUTURE_getTraduccion(idioma, 'eliminarProyecto')}"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    `;
+}
+
+function actualizarContador() {
+    const contadorElement = document.getElementById('contador-proyectos');
+    if (contadorElement) {
+        const total = proyectosFiltrados.length;
+        contadorElement.textContent = `(${total} proyecto${total !== 1 ? 's' : ''})`;
+    }
+}
+
+function mostrarMensajeSinProyectos(contenedor) {
+    const idioma = (JSON.parse(localStorage.getItem('user_config')||'{}').idioma)||'es';
+    contenedor.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 80px 20px; color: #999;">
+            <i class="fas fa-paint-brush" style="font-size: 80px; color: #FFD700; margin-bottom: 30px; opacity: 0.5;"></i>
+            <h2 style="color: #FFD700; margin-bottom: 15px; font-size: 28px;">${LFUTURE_getTraduccion(idioma,'comienzaViaje')}</h2>
+            <p style="font-size: 16px; margin-bottom: 10px;">${LFUTURE_getTraduccion(idioma,'noGuardados')}</p>
+            <p style="margin-bottom: 30px;">${LFUTURE_getTraduccion(idioma,'creaUnicos')}</p>
+            <a href="diseños-3d.html" class="btn-ir-diseños">
+                <i class="fas fa-pen-fancy"></i> ${LFUTURE_getTraduccion(idioma,'crearPrimerDiseno')}
+            </a>
+        </div>
+    `;
+}
+
+// ============================================================================
+// #4 VISTA PREVIA MEJORADA CON ZOOM
+// ============================================================================
+
+let nivelZoom = 1;
+let indiceVistaPreviaActual = -1;
+
+function abrirVistaPrevia(proyectoId, nombre, color) {
+    const modal = document.getElementById('modalVistaPrevia');
+    const imagen = document.getElementById('imagenVistaPrevia');
+    const titulo = document.getElementById('tituloVistaPrevia');
+
+    if (modal && imagen && titulo) {
+        // Encontrar el índice del proyecto en la página actual
+        const proyectosPagina = proyectosFiltrados.slice((paginaActual - 1) * proyectosPorPagina, paginaActual * proyectosPorPagina);
+        indiceVistaPreviaActual = proyectosPagina.findIndex(p => p.id === proyectoId);
+
+        titulo.textContent = nombre;
+        imagen.style.background = color;
+        imagen.textContent = nombre;
+        nivelZoom = 1;
+        imagen.style.transform = 'scale(1)';
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('role', 'dialog');
+        Toast.info('Vista previa abierta: ' + nombre);
+    }
+
+    actualizarBotonesNavegacionModal();
+}
+
+function cerrarVistaPrevia() {
+    const modal = document.getElementById('modalVistaPrevia');
+    if (modal) {
+        modal.style.display = 'none';
+        Toast.info('Vista previa cerrada');
+    }
+}
+
+function zoomIn() {
+    nivelZoom = Math.min(nivelZoom + 0.2, 3);
+    document.getElementById('imagenVistaPrevia').style.transform = `scale(${nivelZoom})`;
+    Toast.info('Zoom: ' + Math.round(nivelZoom * 100) + '%');
+}
+
+function zoomOut() {
+    nivelZoom = Math.max(nivelZoom - 0.2, 0.5);
+    document.getElementById('imagenVistaPrevia').style.transform = `scale(${nivelZoom})`;
+    Toast.info('Zoom: ' + Math.round(nivelZoom * 100) + '%');
+}
+
+function navegarVistaPrevia(direccion) {
+    const proyectosPagina = proyectosFiltrados.slice((paginaActual - 1) * proyectosPorPagina, paginaActual * proyectosPorPagina);
+    const nuevoIndice = indiceVistaPreviaActual + direccion;
+
+    if (nuevoIndice >= 0 && nuevoIndice < proyectosPagina.length) {
+        indiceVistaPreviaActual = nuevoIndice;
+        const proyecto = proyectosPagina[indiceVistaPreviaActual];
+
+        const imagen = document.getElementById('imagenVistaPrevia');
+        const titulo = document.getElementById('tituloVistaPrevia');
+
+        titulo.textContent = proyecto.nombre;
+        imagen.style.background = proyecto.color_prenda || '#1a1a1a';
+        imagen.textContent = proyecto.nombre;
+        nivelZoom = 1;
+        imagen.style.transform = 'scale(1)';
+
+        Toast.info('Vista previa: ' + proyecto.nombre);
+        actualizarBotonesNavegacionModal();
+    }
+}
+
+function actualizarBotonesNavegacionModal() {
+    const proyectosPagina = proyectosFiltrados.slice((paginaActual - 1) * proyectosPorPagina, paginaActual * proyectosPorPagina);
+    const btnAnterior = document.getElementById('btnModalAnterior');
+    const btnSiguiente = document.getElementById('btnModalSiguiente');
+
+    if (btnAnterior && btnSiguiente) {
+        if (indiceVistaPreviaActual <= 0) {
+            btnAnterior.style.display = 'none';
+        } else {
+            btnAnterior.style.display = 'block';
+        }
+        if (indiceVistaPreviaActual >= proyectosPagina.length - 1) {
+            btnSiguiente.style.display = 'none';
+        } else {
+            btnSiguiente.style.display = 'block';
+        }
+    }
+}
+
+// ============================================================================
+// #11, #18 - MODAL EDITAR, DUPLICAR
+// ============================================================================
+
+function abrirModalEditar(proyectoId) {
+    const proyecto = todosLosProyectos.find(p => p.id === proyectoId);
+    if (!proyecto) return;
+
+    document.getElementById('editProyectoId').value = proyecto.id;
+    document.getElementById('editNombreProyecto').value = proyecto.nombre;
+    document.getElementById('editDescripcionProyecto').value = proyecto.descripcion || '';
+    document.getElementById('editTagsProyecto').value = proyecto.tags || '';
+
+    document.getElementById('modalEditarProyecto').style.display = 'flex';
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modalEditarProyecto').style.display = 'none';
+}
+
+async function guardarCambiosProyecto(event) {
+    event.preventDefault();
+    const proyectoId = document.getElementById('editProyectoId').value;
+    const nombre = document.getElementById('editNombreProyecto').value;
+    const descripcion = document.getElementById('editDescripcionProyecto').value;
+    const tags = document.getElementById('editTagsProyecto').value;
+
+    if (!nombre.trim()) {
+        Toast.error('El nombre del proyecto no puede estar vacío.');
+        return;
+    }
+
+    try {
+        const response = await updateProyecto(proyectoId, { nombre, descripcion, tags });
+        if (response.success && response.data.success) {
+            Toast.success('Proyecto actualizado.');
+            cerrarModalEditar();
+            // Recargar para ver los cambios
+            cargarTodosLosProyectos();
+        } else {
+            Toast.error(response.data.message || 'Error al actualizar.');
+        }
+    } catch (error) {
+        Toast.error('Error de conexión al actualizar.');
+    }
+}
+
+async function duplicarProyecto(proyectoId) {
+    const proyecto = todosLosProyectos.find(p => p.id === proyectoId);
+    if (!proyecto) {
+        return Toast.error('Proyecto no encontrado para duplicar.');
+    }
+
+    if (!confirm(`¿Quieres crear una copia de "${proyecto.nombre}"?`)) {
+        return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        return Toast.error('Necesitas iniciar sesión para duplicar un proyecto.');
+    }
+
+    Toast.info('Duplicando proyecto...');
+
+    try {
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/duplicar`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const resultado = await response.json();
+
+        if (resultado.success) {
+            Toast.success('¡Proyecto duplicado con éxito!');
+            cargarTodosLosProyectos(); // Recargar la lista para ver la copia
+        } else {
+            throw new Error(resultado.message || 'Error desconocido del servidor.');
+        }
+    } catch (error) {
+        console.error('Error al duplicar:', error);
+        Toast.error(`Error al duplicar: ${error.message}`);
+    }
+}
+
+// ============================================================================
+// #12 EXPORTACIÓN
+// ============================================================================
+
+async function exportarProyecto(proyectoId, formato) {
+    if (formato === 'png') {
+        Toast.info('La exportación a PNG es una simulación y no representará el modelo 3D exacto.');
+        // Aquí iría la lógica de exportación a PNG, similar a la de mis-proyectos.js
+        alert(`Simulación: Exportando proyecto ${proyectoId} a PNG.`);
+    } else if (formato === 'json') {
+        Toast.info('Preparando exportación JSON...');
+        const proyectoBase = todosLosProyectos.find(p => p.id === proyectoId);
+        if (!proyectoBase) {
+            Toast.error('No se encontró el proyecto para exportar.');
+            return;
+        }
+
+        try {
+            // Obtener los elementos del proyecto para una exportación completa
+            const resElementos = await getElementos(proyectoId);
+            const elementos = resElementos.success ? resElementos.data.elementos : [];
+
+            const proyectoCompleto = { ...proyectoBase, elementos };
+
+            const dataStr = JSON.stringify(proyectoCompleto, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = `${proyectoCompleto.nombre.replace(/\s/g, '_')}.json`;
+
+            let linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            Toast.success('Proyecto exportado a JSON.');
+        } catch (error) {
+            Toast.error('Error al obtener los elementos para la exportación.');
+            console.error("Error exportando a JSON:", error);
+        }
+    }
+}
+
+// ============================================================================
+// ACCIONES DE PROYECTOS
+// ============================================================================
+
+async function eliminarProyecto(proyectoId, nombreProyecto) {
+    if (!confirm(`¿Estás seguro de eliminar "${nombreProyecto}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    try {
+        const response = await deleteProyecto(proyectoId);
+
+        if (response.success && response.data.success) {
+            Toast.success('Proyecto eliminado exitosamente');
+
+            // Remover de las listas
+            todosLosProyectos = todosLosProyectos.filter(p => p.id !== proyectoId);
+            proyectosFiltrados = proyectosFiltrados.filter(p => p.id !== proyectoId);
+
+            // Re-renderizar
+            renderizarProyectos();
+        } else {
+            Toast.error(response.data.message || 'Error al eliminar proyecto');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Error de conexión al eliminar proyecto');
+    }
+}
+
+function abrirEnDisenador(proyectoId) {
+    window.location.href = `diseños-3d.html?proyecto=${proyectoId}`;
+}
+
+// ============================================================================
+// #8 ATAJOS DE TECLADO
+// ============================================================================
+
+document.addEventListener('keydown', function(e) {
+    // Ctrl+N - Nuevo proyecto
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = 'diseños-3d.html';
+    }
+
+    // ESC - Cerrar modal
+    if (e.key === 'Escape') {
+        cerrarVistaPrevia();
+    }
+
+    // Flechas para navegar paginación
+    if (e.key === 'ArrowLeft' && e.ctrlKey) {
+        e.preventDefault();
+        cambiarPagina('anterior');
+    }
+
+    if (e.key === 'ArrowRight' && e.ctrlKey) {
+        e.preventDefault();
+        cambiarPagina('siguiente');
+    }
+
+    if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        document.getElementById('btnRefrescar').click();
+    }
+});
+
+// ============================================================================
+// INICIALIZACIÓN
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Banner de idioma visible ---
+    function renderIdiomaBanner() {
+        const idioma = (JSON.parse(localStorage.getItem('user_config')||'{}').idioma)||'es';
+        let flag = idioma === 'es' ? '🇪🇸' : '🇺🇸';
+        let texto = idioma === 'es' ? 'Idioma actual: Español' : 'Current language: English';
+        let banner = document.getElementById('idioma-banner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'idioma-banner';
+            banner.style = 'width:100%;background:#FFD700;color:#222;padding:12px 0;text-align:center;font-size:20px;font-weight:bold;box-shadow:0 2px 8px #0002;position:sticky;top:0;z-index:1000;transition:background 0.3s;';
+            document.body.prepend(banner);
+        }
+        banner.innerHTML = `${flag} <span style='margin-left:8px;'>${texto}</span>`;
+    }
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'user_config') renderIdiomaBanner();
+    });
+    document.getElementById('configIdioma')?.addEventListener('change', renderIdiomaBanner);
+    renderIdiomaBanner();
+    // Cargar proyectos
+    cargarTodosLosProyectos();
+
+    // #1 Búsqueda
+    const inputBusqueda = document.getElementById('inputBusqueda');
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', function(e) {
+            filtros.termino = e.target.value.trim();
+            renderizarProyectos();
+        });
+    }
+
+    // Filtro por estado
+    const selectEstado = document.getElementById('selectEstado');
+    if (selectEstado) {
+        selectEstado.addEventListener('change', function(e) {
+            filtros.estado = e.target.value;
+            renderizarProyectos();
+        });
+    }
+
+    // Filtro por tag
+    const selectTag = document.getElementById('selectTag');
+    if (selectTag) {
+        selectTag.addEventListener('change', function(e) {
+            filtros.tag = e.target.value;
+            renderizarProyectos();
+        });
+    }
+
+    // #3 Ordenamiento
+    const selectOrdenar = document.getElementById('selectOrdenar');
+    if (selectOrdenar) {
+        selectOrdenar.addEventListener('change', function(e) {
+            filtros.orden = e.target.value;
+            cargarTodosLosProyectos(); // Recargar desde el backend con el nuevo orden
+        });
+    }
+
+    // Botón crear nuevo
+    const btnNuevoProyecto = document.getElementById('btnNuevoProyecto');
+    if (btnNuevoProyecto) {
+        btnNuevoProyecto.addEventListener('click', function() {
+            window.location.href = 'diseños-3d.html';
+        });
+    }
+
+    // Botón refrescar
+    const btnRefrescar = document.getElementById('btnRefrescar');
+    if (btnRefrescar) {
+        btnRefrescar.addEventListener('click', function() {
+            Toast.info('Recargando proyectos...');
+            cargarTodosLosProyectos();
+        });
+    }
+
+    // Formulario de edición
+    const formEditar = document.getElementById('formEditarProyecto');
+    if (formEditar) {
+        formEditar.addEventListener('submit', guardarCambiosProyecto);
+    }
+
+    // #10 Inicializar tooltips
+    inicializarTooltips();
+});
+
+// ============================================================================
+// #10 TOOLTIPS INFORMATIVOS
+// ============================================================================
+
+function inicializarTooltips() {
+    // Los tooltips ya están en los atributos title de los elementos
+    // Agregar estilo mejorado con CSS puro (ya incluido en diseños1.0.html)
+
+    // Mostrar tooltip de atajos
+    setTimeout(() => {
+        Toast.info('💡 Tip: Usa Ctrl+N para nuevo proyecto, Ctrl+← → para navegar páginas', 5000);
+    }, 1000);
+}
+
+// Small helper to escape HTML inside template literal (avoid XSS when inserting proyecto.nombre)
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+    </script>
+<body>
+    <script>
+        if (!requireAuth()) {
+            // Redirige a login si no está autenticado
+        }
+    </script>
+
+    <div class="contenedor-principal">
+        <!-- Barra lateral de navegación -->
+        <aside class="barra-lateral">
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+                <p class="eslogan">Innovación en moda digital</p>
+            </div>
+            <nav class="menu-navegacion">
+                <ul>
+                    <li><a href="inicio.html"><i class="fas fa-home"></i> <span>Inicio</span></a></li>
+                    <li><a href="diseños1.0.html" class="activo"><i class="fas fa-shirt"></i> <span>Mis Proyectos</span></a></li>
+                    <li><a href="diseños L-Future.html"><i class="fas fa-globe-americas"></i> <span>Proyectos L-FUTURE</span></a></li>
+                    <li><a href="sobre nosotros.html"><i class="fas fa-users"></i> <span>Sobre Nosotros</span></a></li>
+                    <li><a href="diseños-3d.html"><i class="fas fa-paint-brush"></i> <span>Diseños-3D</span></a></li>
+                    <li><a href="perfil.html"><i class="fas fa-cog"></i> <span>Configuración</span></a></li>
+                </ul>
+            </nav>
+            <div class="info-usuario-lateral">
+                <div class="avatar">
+                    <img src="" alt="Avatar usuario" class="user-avatar">
+                </div>
+                <h3 class="user-name">Usuario</h3>
+                <span class="badge user-type-badge">Usuario</span>
+            </div>
+            <button class="btn-signout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+            <button class="btn-cerrar-movil">
+                <i class="fas fa-times"></i>
+            </button>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="contenido-principal">
+            <header class="encabezado">
+                <div class="encabezado-izquierda">
+                    <button class="btn-menu" aria-label="Abrir menú">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2>MIS PROYECTOS <span id="contador-proyectos" class="contador"></span></h2>
+                </div>
+                <div class="avatar-encabezado">
+                    <img src="" alt="Avatar usuario" class="user-avatar">
+                    <div class="encabezado-username"></div>
+                </div>
+            </header>
+
+            <!-- Controles de Proyectos (Búsqueda, Filtros, Ordenamiento) -->
+            <section class="controles-grid">
+                <div class="grupo-control busqueda">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="inputBusqueda" placeholder="Buscar por nombre, descripción...">
+                </div>
+                <div class="grupo-control">
+                    <label for="selectEstado">Estado:</label>
+                    <select id="selectEstado" title="Filtrar por estado del proyecto">
+                        <option value="todos">Todos</option>
+                        <option value="en_progreso">En Progreso</option>
+                        <option value="completado">Completado</option>
+                    </select>
+                </div>
+                <div class="grupo-control">
+                    <label for="selectTag">Etiqueta:</label>
+                    <select id="selectTag" title="Filtrar por etiqueta">
+                        <option value="todos">Todas</option>
+                        <!-- Las etiquetas se llenarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="grupo-control">
+                    <label for="selectOrdenar">Ordenar por:</label>
+                    <select id="selectOrdenar" title="Ordenar proyectos">
+                        <option value="fecha_modificacion-desc">Modificación</option>
+                        <option value="fecha_creacion-desc">Más Recientes</option>
+                        <option value="fecha_creacion-asc">Más Antiguos</option>
+                        <option value="nombre-asc">Nombre (A-Z)</option>
+                        <option value="nombre-desc">Nombre (Z-A)</option>
+                    </select>
+                </div>
+                <div class="grupo-control acciones-grid">
+                    <button id="btnRefrescar" class="btn-accion-grid" title="Recargar proyectos (R)">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button id="btnNuevoProyecto" class="btn-accion-grid btn-primario" title="Crear nuevo proyecto (Ctrl+N)">
+                        <i class="fas fa-plus"></i> Nuevo Proyecto
+                    </button>
+                    <span class="tooltip-info" style="margin-left:8px; color:#FFD700; font-size:13px;" title="Tip: ¡Usa nombres descriptivos y etiquetas para organizar tus diseños!">🛈</span>
+                </div>
+            </section>
+
+            <!-- Contenedor de Proyectos -->
+            <section id="contenedor-proyectos" class="grid-proyectos-dinamico">
+                <!-- Las tarjetas de proyecto se insertarán aquí dinámicamente -->
+            </section>
+
+            <!-- Paginación -->
+            <section id="paginacion" class="paginacion-contenedor">
+                <!-- La paginación se insertará aquí dinámicamente -->
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal para Vista Previa Mejorada -->
+    <div id="modalVistaPrevia" class="modal-vista-previa">
+        <span class="cerrar-modal-vp" onclick="cerrarVistaPrevia()">&times;</span>
+        <button id="btnModalAnterior" class="btn-navegacion-modal prev" onclick="navegarVistaPrevia(-1)" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+        <button id="btnModalSiguiente" class="btn-navegacion-modal next" onclick="navegarVistaPrevia(1)" title="Siguiente"><i class="fas fa-chevron-right"></i></button>
+        <div class="modal-contenido-vp">
+            <h3 id="tituloVistaPrevia"></h3>
+            <div class="imagen-contenedor-vp">
+                <div id="imagenVistaPrevia" class="imagen-vp">
+                    <!-- La imagen o el texto se insertarán aquí -->
+                </div>
+            </div>
+            <div class="controles-zoom">
+                <button onclick="zoomOut()" title="Alejar"><i class="fas fa-search-minus"></i></button>
+                <button onclick="zoomIn()" title="Acercar"><i class="fas fa-search-plus"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Nombre y Tags -->
+    <div id="modalEditarProyecto" class="modal-vista-previa" style="display: none;">
+        <div class="modal-contenido-vp" style="max-width: 500px; background: #2c2c2c; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
+            <span class="cerrar-modal-vp" onclick="cerrarModalEditar()">&times;</span>
+            <h3 id="tituloModalEditar">Editar Proyecto</h3>
+            <form id="formEditarProyecto" style="padding: 20px;">
+                <input type="hidden" id="editProyectoId">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="editNombreProyecto" style="display: block; margin-bottom: 5px;">Nombre del Proyecto</label>
+                    <input type="text" id="editNombreProyecto" required style="width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="editDescripcionProyecto" style="display: block; margin-bottom: 5px;">Descripción</label>
+                    <textarea id="editDescripcionProyecto" rows="3" style="width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="editTagsProyecto" style="display: block; margin-bottom: 5px;">Etiquetas (separadas por coma)</label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" id="editTagsProyecto" placeholder="Ej: urbano, verano, minimalista" style="width: 100%; padding: 8px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;">
+                        <button type="button" id="btnAddTag" title="Agregar etiqueta" style="background:#FFD700;color:#222;padding:6px 12px;border-radius:4px;border:none;cursor:pointer;font-weight:bold;">+</button>
+                    </div>
+                    <div id="tagsList" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+                </div>
+                <div style="text-align: right;">
+                    <button type="button" onclick="cerrarModalEditar()" class="btn-accion btn-cancelar">Cancelar</button>
+                    <button type="submit" class="btn-accion btn-primario">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Scripts de la página -->
+    <script src="https://cdn.jsdelivr.net/npm/izitoast/dist/js/iziToast.min.js"></script>
+    <script>
+        // Configuración global para Toast
+        const Toast = {
+            success: (message) => iziToast.success({ title: 'Éxito', message: message, position: 'topRight', timeout: 3000 }),
+            error: (message) => iziToast.error({ title: 'Error', message: message, position: 'topRight', timeout: 5000 }),
+            info: (message, timeout = 3000) => iziToast.info({ title: 'Info', message: message, position: 'topRight', timeout: timeout }),
+        };
+    </script>
+    <script src="diseños1.0.js" defer></script>
+    <script src="./register-sw.js" defer></script>
+    <script type="module" src="./main-loader.js"></script>
+    <script>
+        // Script para menú móvil y lógica de la página (layout-init.js)
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnMenu = document.querySelector('.btn-menu');
+            const barraLateral = document.querySelector('.barra-lateral');
+            const btnCerrarMovil = document.querySelector('.btn-cerrar-movil');
+
+            if (btnMenu) {
+                btnMenu.addEventListener('click', function() {
+                    barraLateral.classList.add('activa');
+                });
+            }
+
+            if (btnCerrarMovil) {
+                btnCerrarMovil.addEventListener('click', function() {
+                    barraLateral.classList.remove('activa');
+                });
+            }
+
+            // Lógica para cerrar el menú al hacer clic fuera en móviles
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 992 &&
+                    barraLateral.classList.contains('activa') &&
+                    !barraLateral.contains(e.target) &&
+                    !btnMenu.contains(e.target)) {
+                    barraLateral.classList.remove('activa');
+                }
+            });
+
+            // Lógica para cerrar el modal de vista previa
+            const modal = document.getElementById('modalVistaPrevia');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        cerrarVistaPrevia();
+                    }
+                });
+            }
+
+            // Cargar datos del usuario en la UI
+            const user = getUser();
+            if (user) {
+                document.querySelectorAll('.user-name').forEach(el => el.textContent = user.username);
+                document.querySelectorAll('.user-avatar').forEach(el => el.src = user.foto_perfil || 'https://placehold.co/100x100/1a1a1a/FFD700?text=' + user.username.charAt(0).toUpperCase());
+                document.querySelectorAll('.user-type-badge').forEach(el => {
+                    el.textContent = user.tipo_usuario.charAt(0).toUpperCase() + user.tipo_usuario.slice(1);
+                    el.classList.add(`badge-${user.tipo_usuario}`);
+                });
+            }
+        });
+
+        // #7 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('Service Worker registrado con éxito:', registration))
+                    .catch(error => console.log('Error al registrar Service Worker:', error));
+            });
+        }
+
+    </script>
+    <style>
+        /* Estilos para la nueva galería de proyectos */
+        .controles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .grupo-control {
+            display: flex;
+            flex-direction: column;
+        }
+        .grupo-control.busqueda {
+            position: relative;
+            grid-column: span 2;
+        }
+        .grupo-control.busqueda .fa-search {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+        .grupo-control label {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .grupo-control input,
+        .grupo-control select {
+            width: 100%;
+            padding: 10px;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            color: #eee;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .grupo-control.busqueda input {
+            padding-left: 35px;
+        }
+        .acciones-grid {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        .btn-accion-grid {
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #3a3a3a;
+            color: #FFD700;
+            transition: background-color 0.2s;
+        }
+        .btn-accion-grid:hover {
+            background-color: #4a4a4a;
+        }
+        .btn-accion-grid.btn-primario {
+            flex-grow: 1;
+            background-color: #FFD700;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        .btn-accion-grid.btn-primario:hover {
+            background-color: #e0bd2a;
+        }
+
+        /* Grid de Proyectos */
+        .grid-proyectos-dinamico {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            padding: 0 20px 20px;
+        }
+
+        /* Tarjeta de Proyecto */
+        .tarjeta-proyecto {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .tarjeta-proyecto:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.1);
+        }
+
+        /* Paginación */
+        .paginacion-contenedor {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .controles-paginacion {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #1e1e1e;
+            padding: 8px;
+            border-radius: 25px;
+        }
+        .btn-paginacion, .btn-numero-pagina {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 15px;
+        }
+    </style>
+</body>
+</html>

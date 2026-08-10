@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L-FUTURE - Proyectos L-Future</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="diseños L-future.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.json">
+    <script type="module" src="/main-loader.js" defer></script>
+    <script src="/register-sw.js" defer></script>
+    <!-- legacy fallbacks kept for non-module environments -->
+    <script nomodule src="config.js"></script>
+    <script nomodule src="auth.js"></script>
+    <script nomodule src="proyectos-globales.js"></script>
+</head>
+<body>
+    <script>
+        if (!requireAuth()) {
+            // Redirige a login si no autenticado
+        }
+    </script>
+    <div class="contenedor-principal">
+        <!-- Barra lateral de navegación -->
+        <aside class="barra-lateral">
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+                <p class="eslogan">Innovación en moda digital</p>
+            </div>
+            <nav class="menu-navegacion">
+                <ul>
+                    <li><a href="inicio.html"><i class="fas fa-home"></i> <span>inicio</span></a></li>
+                    <li><a href="diseños1.0.html"><i class="fas fa-shirt"></i> <span>Mis Proyectos</span></a></li>
+                    <li><a href="diseños L-Future.html"><i class="fas fa-globe-americas"></i> <span>Proyectos L-FUTURE</span></a></li>
+                    <li><a href="sobre nosotros.html"><i class="fas fa-users"></i> <span>Sobre Nosotros</span></a></li>
+                    <li><a href="diseños-3d.html"><i class="fas fa-paint-brush"></i> <span>Diseños-3D</span></a></li>
+                    <li><a href="perfil.html"><i class="fas fa-cog"></i> <span>Configuración</span></a></li>
+                </ul>
+            </nav>
+            <div class="info-usuario-lateral">
+                <div class="avatar">
+                    <img class="user-avatar" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Avatar usuario">
+                </div>
+                <h3 class="user-name">Leandro Rojas</h3>
+                <span class="badge">Administrador</span>
+            </div>
+            <button class="btn-signout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+            <!-- Botón de cierre para móviles -->
+            <button class="btn-cerrar-movil">
+                <i class="fas fa-times"></i>
+            </button>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="contenido-principal">
+            <header class="encabezado">
+                <div class="encabezado-izquierda">
+                    <button class="btn-menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2>PROYECTOS L-FUTURE</h2>
+                </div>
+                <div class="avatar-encabezado">
+                    <img class="user-avatar" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Avatar usuario">
+                    <div class="encabezado-username"></div>
+                </div>
+            </header>
+
+            <!-- Descripción de la sección -->
+            <section class="descripcion-seccion">
+                <p>Diseños preestablecidos de la marca para compra inmediata</p>
+            </section>
+
+            <!-- Controles de filtrado y ordenación -->
+            <section class="controles-proyectos">
+                <div class="filtros">
+                    <button class="btn-filtro activo" data-filtro="todos">Todos</button>
+                    <button class="btn-filtro" data-filtro="disponible">Disponible</button>
+                </div>
+                <div class="ordenar">
+                    <label for="ordenar-select">Ordenar por:</label>
+                    <select id="ordenar-select" class="select-ordenar">
+                        <option value="nombre">Nombre</option>
+                        <option value="popularidad">Popularidad</option>
+                        <option value="fecha">Fecha de lanzamiento</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Grid de proyectos -->
+            <section id="galeria-proyectos-globales" class="grid-proyectos">
+                <!-- Proyectos globales se cargarán aquí dinámicamente -->
+                 <div id="mensaje-cargando-global" style="display: none; text-align: center; padding: 40px; color: #999; grid-column: 1 / -1;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Cargando proyectos oficiales...</p>
+                </div>
+            </section>
+
+            <!-- Mensaje destacado -->
+            <section class="mensaje-destacado">
+                <div class="tarjeta-mensaje">
+                    <i class="fas fa-lightbulb"></i>
+                    <p>Recuerda que pronto podrás crear tus propios diseños en 3D</p>
+                </div>
+            </section>
+
+            <!-- Pie de página -->
+            <footer class="pie-pagina">
+                <p>&copy; 2025 L-FUTURE. Todos los derechos reservados.</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Modal para detalles del proyecto -->
+    <div id="modal-detalles" class="modal">
+        <div class="modal-contenido">
+            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+            <div id="modal-preview-controls" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <button id="btn-prev-proyecto" title="Anterior" style="font-size:20px;padding:4px 12px;">&#8592;</button>
+                <span id="modal-preview-title" style="font-weight:bold;font-size:18px;"></span>
+                <button id="btn-next-proyecto" title="Siguiente" style="font-size:20px;padding:4px 12px;">&#8594;</button>
+            </div>
+            <div id="modal-preview-image" style="text-align:center;margin-bottom:10px;">
+                <!-- Imagen/diseño grande se mostrará aquí -->
+            </div>
+            <div id="modal-preview-zoom-controls" style="text-align:center;margin-bottom:10px;">
+                <button id="btn-zoom-in" title="Zoom in" style="font-size:18px;padding:2px 10px;">+</button>
+                <button id="btn-zoom-out" title="Zoom out" style="font-size:18px;padding:2px 10px;">-</button>
+            </div>
+            <div id="contenido-modal"></div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript para el menú móvil y modales
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnMenu = document.querySelector('.btn-menu');
+            const barraLateral = document.querySelector('.barra-lateral');
+            const btnCerrarMovil = document.querySelector('.btn-cerrar-movil');
+
+            if (btnMenu) btnMenu.addEventListener('click', () => barraLateral.classList.add('activa'));
+            if (btnCerrarMovil) btnCerrarMovil.addEventListener('click', () => barraLateral.classList.remove('activa'));
+
+            // Lógica para cerrar el modal
+            const modal = document.getElementById('modal-detalles');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        cerrarModal();
+                    }
+                });
+            }
+
+            // Cargar datos del usuario en la UI
+            const user = getUser();
+            if (user) {
+                document.querySelectorAll('.user-name').forEach(el => el.textContent = user.username);
+                document.querySelectorAll('.user-avatar').forEach(el => el.src = user.foto_perfil || 'https://placehold.co/100x100/1a1a1a/FFD700?text=' + user.username.charAt(0).toUpperCase());
+                document.querySelectorAll('.badge').forEach(el => {
+                    if (!el.classList.contains('user-type-badge')) { // Evitar sobreescribir otros badges
+                        el.textContent = user.tipo_usuario.charAt(0).toUpperCase() + user.tipo_usuario.slice(1);
+                        el.classList.add(`badge-${user.tipo_usuario}`);
+                    }
+                });
+            }
+        });
+
+        function cerrarModal() {
+            const modal = document.getElementById('modal-detalles');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+    <script src="shared/layout-init.js"></script>
+</body>
+</html>

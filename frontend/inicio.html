@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L-FUTURE - Innovación en Moda Digital</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="inicio.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <script src="auth.js"></script>
+    <script>
+        // Verificar autenticación antes de cargar la página
+        if (!requireAuth()) {
+            // Si no está autenticado, requireAuth() redirige automáticamente
+        }
+    </script>
+    <div class="contenedor-principal">
+        <!-- Barra lateral de navegación -->
+        <aside class="barra-lateral">
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+                <p class="eslogan">Innovación en moda digital</p>
+            </div>
+            <nav class="menu-navegacion">
+                <ul>
+                    <li><a href="inicio.html" class="active"><i class="fas fa-home"></i> <span>Inicio</span></a></li>
+                    <li><a href="diseños1.0.html"><i class="fas fa-shirt"></i> <span>Mis Proyectos</span></a></li>
+                    <li><a href="diseños L-Future.html"><i class="fas fa-globe-americas"></i> <span>Proyectos L-FUTURE</span></a></li>
+                    <li><a href="sobre nosotros.html"><i class="fas fa-users"></i> <span>Sobre Nosotros</span></a></li>
+                    <li><a href="editor-3d.html"><i class="fas fa-paint-brush"></i> <span>Diseños-3D</span></a></li>
+                    <li><a href="perfil.html"><i class="fas fa-cog"></i> <span>Configuración</span></a></li>
+                </ul>
+            </nav>
+              <div class="info-usuario-lateral">
+                <div class="avatar">
+                    <img src="" alt="Avatar usuario" class="user-avatar">
+                </div>
+                <h3 class="user-name">Usuario</h3>
+                <span class="badge user-type-badge">Usuario</span>
+            </div>
+            <button class="btn-signout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+            <button class="btn-cerrar-movil">
+                <i class="fas fa-times"></i>
+            </button>
+        </aside>
+            <!-- Contenido principal -->
+        <main class="contenido-principal">
+            <header class="encabezado">
+                <div class="encabezado-izquierda">
+                    <button class="btn-menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2>INICIO L-FUTURE</h2>
+                </div>
+                <div class="avatar-encabezado">
+                    <!-- Reemplazamos foto por iniciales en el encabezado -->
+                    <div class="avatar-iniciales user-avatar" role="img" aria-label="Avatar de usuario"></div>
+                    <!-- Nombre de usuario en tiempo real debajo del avatar (actualizado por JS) -->
+                    <div class="encabezado-username"></div>
+                </div>
+            </header>
+            <!-- Sección de estadísticas -->
+            <section class="seccion-estadisticas">
+                <div class="tarjeta-estadistica">
+                    <div class="icono-estadistica">
+                        <i class="fas fa-shirt"></i>
+                    </div>
+                    <div class="contenido-estadistica">
+                        <h3 id="total-proyectos">0</h3>
+                        <p>Proyectos Locales</p>
+                    </div>
+                </div>
+                <div class="tarjeta-estadistica">
+                    <div class="icono-estadistica">
+                        <i class="fas fa-tshirt"></i>
+                    </div>
+                    <div class="contenido-estadistica">
+                        <h3>1.0</h3>
+                        <p>Version de la App</p>
+                    </div>
+                </div>
+                <div class="tarjeta-estadistica">
+                    <div class="icono-estadistica">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <div class="contenido-estadistica">
+                        <h3>1</h3>
+                        <p>Proyectos L-FUTURE</p>
+                    </div>
+                </div>
+            </section>
+            <!-- Sección Mis Proyectos - Solo galería dinámica por JS -->
+            <section>
+                <h3 class="titulo-seccion">Mis Proyectos</h3>
+                <div class="tarjeta-perfil">
+                    <div class="contenedor-scroll">
+                        <div class="galeria-scroll">
+                            <!-- Los proyectos del usuario se renderizan aquí dinámicamente por JS -->
+                            <!-- Local projects preview (filled by JS) -->
+                            <div id="local-projects-preview" style="display:flex;gap:10px;align-items:center;"></div>
+                        </div>
+                        <div class="proyecto-scroll" id="proyecto-crear-nuevo">
+                            <button class="btn-crear-nuevo" onclick="window.location.href='editor-3d.html'">
+                                <i class="fas fa-plus"></i> CREAR NUEVO PROYECTO
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn-ver-todos">Ver Todos los Proyectos <a href="diseños1.0.html">aquí</a></button>
+                </div>
+            </section>
+            <!-- Sección Proyectos L-FUTURE - Enlace corregido -->
+            <section>
+                <h3 class="titulo-seccion">Proyectos L-FUTURE</h3>
+                <div class="tarjeta-perfil">
+                    <p style="color: #999; margin-bottom: 20px;">Descubre los diseños oficiales de L-FUTURE, creados por nuestro equipo de diseñadores profesionales.</p>
+                    <div class="centrar-boton">
+                        <a href="diseños L-Future.html" class="btn-diseñar">
+                            <i class="fas fa-globe-americas"></i> Ver Proyectos L-FUTURE
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- Sección Diseño 3D - Mejorada con vista previa interactiva -->
+            <section>
+                <h3 class="titulo-seccion">DISEÑO 3D DE L-FUTURE</h3>
+                <div class="tarjeta-perfil diseño-3d">
+                    <p>En esta sección podrás crear tus proyectos y guardarlos local o globalmente. Diseña tu próxima prenda con nuestra herramienta 3D.</p>
+                    
+                    <div class="vista-previa-3d">
+                        <div class="contenedor-modelo-3d">
+                                                        <div class="modelo-3d" id="modelo3d">
+                                                                <!-- SVG 2D estilizado para vista previa de franela (manga corta, cuello) -->
+                                                                <svg id="tshirt-svg" class="imagen-3d" width="320" height="380" viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vista previa de franela">
+                                                                    <defs>
+                                                                        <linearGradient id="tshirt-grad" x1="0" x2="1" y1="0" y2="1">
+                                                                            <stop offset="0%" stop-color="#1a1a1a" stop-opacity="0.12"/>
+                                                                            <stop offset="100%" stop-color="#000000" stop-opacity="0.12"/>
+                                                                        </linearGradient>
+                                                                        <filter id="tshirt-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                                                            <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000" flood-opacity="0.45"/>
+                                                                        </filter>
+                                                                    </defs>
+                                                                    <g id="tshirt-group" filter="url(#tshirt-shadow)">
+                                                                        <!-- Body -->
+                                                                        <path id="tshirt-body" d="M60 70 C52 70, 52 50, 80 50 L120 50 C130 50, 140 60, 160 60 C180 60, 190 50, 210 50 L250 50 C278 50, 278 70, 250 70 L220 92 L220 320 C220 335, 200 355, 160 360 C120 355, 100 335, 100 320 L100 92 Z" fill="#1a1a1a" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+                                                                        <!-- Sleeves subtle cutouts -->
+                                                                        <path id="tshirt-sleeve-left" d="M60 70 L35 110 C28 120, 45 135, 70 120 L75 95 Z" fill="#1a1a1a" opacity="0.06"/>
+                                                                        <path id="tshirt-sleeve-right" d="M250 70 L275 110 C282 120, 265 135, 240 120 L235 95 Z" fill="#1a1a1a" opacity="0.06"/>
+                                                                        <!-- Collar -->
+                                                                        <path id="tshirt-collar" d="M120 50 C135 35, 185 35, 200 50 L190 58 C170 45, 150 45, 130 58 Z" fill="#000" opacity="0.12"/>
+                                                                    </g>
+                                                                </svg>
+                                                                <div class="controles-3d">
+                                                                        <button class="btn-control-3d" id="rotar-izq"><i class="fas fa-undo"></i></button>
+                                                                        <button class="btn-control-3d" id="rotar-der"><i class="fas fa-redo"></i></button>
+                                                                        <button class="btn-control-3d" id="zoom-in"><i class="fas fa-search-plus"></i></button>
+                                                                        <button class="btn-control-3d" id="zoom-out"><i class="fas fa-search-minus"></i></button>
+                                                                </div>
+                                                        </div>
+                            <div class="info-modelo-3d">
+                                <h4>Personaliza tu Franela</h4>
+                                <p>Gira el modelo para verlo desde todos los ángulos y comienza a diseñar.</p>
+                                <div class="opciones-diseno">
+                                    <div class="opcion-diseno">
+                                        <span>Color:</span>
+                                        <div class="selector-color">
+                                            <div class="color-option" style="background-color: #000000;"></div>
+                                            <div class="color-option" style="background-color: #FF0000;"></div>
+                                            <div class="color-option" style="background-color: #0000FF;"></div>
+                                            <div class="color-option" style="background-color: #FFFFFF;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="opcion-diseno">
+                                        <span>Talla:</span>
+                                        <select class="selector-talla">
+                                            <option>S</option>
+                                            <option>M</option>
+                                            <option>L</option>
+                                            <option>XL</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="centrar-boton">
+                        <button class="btn-diseñar">
+                            <i class="fas fa-pen-fancy"></i> Comenzar a Diseñar en 3D
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- Sección Sobre L-FUTURE -->
+            <section>
+                <h3 class="titulo-seccion">SOBRE L-FUTURE</h3>
+                <div class="tarjeta-perfil">
+                    <p>L-FUTURE es innovación, creación y estilo al mismo tiempo. Este proyecto busca revolucionar la moda digital y que puedas crear tus prendas, así como lo escuchas al estilo que desees a un solo click. El desarrollo de esta marca viene de la búsqueda de libertad, poder expresar algo por medio de cómo te vistes y qué mejor que seas tú mismo creando. El desarrollo de esta página viene a partir del Final Project de CS50X de HARVARD 2025, para seguir desarrollándolo contamos con tu apoyo en nuestra prenda básica.</p>
+                    <div class="redes-sociales">
+                        <a href="#" class="red-social"><i class="fab fa-instagram"></i> lean_chinx</a>
+                        <a href="#" class="red-social"><i class="fab fa-instagram"></i> Lfuture_oficial</a>
+                        <a href="#" class="red-social"><i class="fab fa-github"></i> leochinno07</a>
+                        <a href="#" class="red-social"><i class="fab fa-github"></i> CS50x Harvard 2025 en edX</a>
+                    </div>
+                    <div class="derechos">
+                        <p>© 2025 Leandro Rojas único y propietario autor de esta obra. Todos los derechos reservados.</p>
+                        <a href="politica de privacidad.html" class="politica-privacidad">Política de Privacidad</a> | <a href="politica de privacidad.html" class="politica-privacidad">Términos de Servicio</a>
+                    </div> 
+                    <div class="centrar-boton">
+                        <button class="btn-diseñar">
+                            <i class="fas fa-info-circle"></i> Más sobre L-FUTURE
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // JavaScript para el menú móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnMenu = document.querySelector('.btn-menu');
+            const barraLateral = document.querySelector('.barra-lateral');
+            const btnCerrarMovil = document.querySelector('.btn-cerrar-movil');
+            
+            btnMenu.addEventListener('click', function() {
+                barraLateral.classList.add('activa');
+            });
+            
+            btnCerrarMovil.addEventListener('click', function() {
+                barraLateral.classList.remove('activa');
+            });
+            
+            // Efectos de hover mejorados para las tarjetas de proyecto
+                                <div class="tarjeta-estadistica">
+                                    <div class="icono-estadistica">
+                                        <i class="fas fa-tshirt"></i>
+                                    </div>
+                                    <div class="contenido-estadistica">
+                                        <h3>1.0</h3>
+                                        <p>Version de la App</p>
+                                    </div>
+                                </div>
+                });
+            });
+            
+            // Simulación de controles 3D básicos
+            const imagen3d = document.getElementById('tshirt-svg') || document.querySelector('.imagen-3d');
+            let rotacion = 0;
+            let escala = 1;
+            // Paleta de colores para la franela (ajustable)
+            const palette = ['#000000', '#FFFFFF', '#FFD700', '#FF5733', '#3498DB', '#2ECC71'];
+
+            // Crear paleta visual en el DOM
+            const infoModelo = document.querySelector('.info-modelo-3d .opciones-diseno');
+            if (infoModelo) {
+                const cont = document.createElement('div');
+                cont.className = 'color-palette';
+                palette.forEach(col => {
+                    const sw = document.createElement('div');
+                    sw.className = 'color-swatch';
+                    sw.style.backgroundColor = col;
+                    sw.dataset.color = col;
+                    sw.addEventListener('click', function() {
+                        document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
+                        sw.classList.add('active');
+                        aplicarColorFranela(col);
+                    });
+                    cont.appendChild(sw);
+                });
+                infoModelo.appendChild(cont);
+                // activar primer color por defecto
+                cont.querySelector('.color-swatch').classList.add('active');
+            }
+            
+            document.getElementById('rotar-izq').addEventListener('click', function() {
+                rotacion -= 15;
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+            
+            document.getElementById('rotar-der').addEventListener('click', function() {
+                rotacion += 15;
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+            
+            document.getElementById('zoom-in').addEventListener('click', function() {
+                escala = Math.min(1.6, escala + 0.1);
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+            
+            document.getElementById('zoom-out').addEventListener('click', function() {
+                escala = Math.max(0.6, escala - 0.1);
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+
+            // Aplica color al body del SVG (visualmente atractivo con gradiente)
+            function aplicarColorFranela(color) {
+                const body = document.getElementById('tshirt-body');
+                if (!body) return;
+                // aplicar un ligero degradado visual via fill
+                try {
+                    body.style.fill = color;
+                } catch (e) {
+                    // fallback
+                    body.setAttribute('fill', color);
+                }
+            }
+
+            // Inicializar color por defecto
+            aplicarColorFranela(palette[0]);
+
+            // Actualizar contador de proyectos (max 10)
+            (async function(){
+                try{
+                    if(typeof getProyectos === 'function'){
+                        const res = await getProyectos();
+                        if(res && res.success && res.data && Array.isArray(res.data.proyectos)){
+                            const total = Math.min(res.data.proyectos.length, 10);
+                            const el = document.getElementById('total-proyectos');
+                            if(el) el.textContent = total.toString();
+                        } else if(res && res.success && res.data && res.data.proyectos === undefined && Array.isArray(res.data)){
+                            // fallback if API returns list directly
+                            const total = Math.min(res.data.length, 10);
+                            const el = document.getElementById('total-proyectos'); if(el) el.textContent = total.toString();
+                        }
+                    }
+                }catch(e){ console.warn('No se pudo obtener total de proyectos', e); }
+            })();
+
+            // Al hacer click en 'Comenzar a Diseñar en 3D' pasar color seleccionado como query param
+            document.querySelectorAll('.btn-diseñar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const active = document.querySelector('.color-swatch.active');
+                    const color = active ? active.dataset.color.replace('#','') : '000000';
+                    window.location.href = `editor-3d.html?color=${encodeURIComponent(color)}`;
+                });
+            });
+
+            // Render a small preview of locally saved projects (mis_proyectos_lf23)
+            function renderLocalProjectsPreview(){
+                try{
+                    const raw = localStorage.getItem('mis_proyectos_lf23');
+                    if(!raw) return;
+                    const arr = JSON.parse(raw);
+                    const container = document.getElementById('local-projects-preview');
+                    if(!container) return;
+                    container.innerHTML = '';
+                    arr.slice(0,6).forEach((p,idx)=>{
+                        const card = document.createElement('div');
+                        card.style.width = '110px';
+                        card.style.height = '140px';
+                        card.style.background = '#222';
+                        card.style.borderRadius = '8px';
+                        card.style.padding = '8px';
+                        card.style.color = '#fff';
+                        card.style.display = 'flex';
+                        card.style.flexDirection = 'column';
+                        card.style.justifyContent = 'center';
+                        card.style.alignItems = 'center';
+                        card.style.cursor = 'pointer';
+                        const color = (p.escenas && p.escenas[0] && p.escenas[0].shirt && p.escenas[0].shirt.color) ? p.escenas[0].shirt.color : '#444';
+                        const preview = document.createElement('div');
+                        preview.style.width = '100%';
+                        preview.style.height = '80px';
+                        preview.style.borderRadius = '6px';
+                        preview.style.background = color;
+                        preview.style.display = 'flex';
+                        preview.style.alignItems = 'center';
+                        preview.style.justifyContent = 'center';
+                        preview.style.fontSize = '12px';
+                        preview.style.fontWeight = '700';
+                        preview.textContent = p.nombre ? p.nombre.substring(0,10) : 'Proyecto';
+                        const lbl = document.createElement('div');
+                        lbl.style.marginTop = '8px';
+                        lbl.style.fontSize = '12px';
+                        lbl.style.textAlign = 'center';
+                        lbl.textContent = p.nombre ? p.nombre : 'Proyecto local';
+                        card.appendChild(preview);
+                        card.appendChild(lbl);
+                        card.onclick = function(){
+                            // Open editor with local project index -> pass special query local_index
+                            window.location.href = `editor-3d.html?local_index=${idx}`;
+                        };
+                        container.appendChild(card);
+                    });
+                }catch(e){console.warn('No local projects', e);}    
+            }
+            renderLocalProjectsPreview();
+            
+            // Cambio de color en las opciones de diseño
+            const colorOptions = document.querySelectorAll('.color-option');
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+    <script src="./register-sw.js" defer></script>
+    <script type="module" src="./main-loader.js"></script>
+    <script src="shared/layout-init.js"></script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="L-FUTURE - Editor 3D para Prendas de Vestir">
+    <title>L-FUTURE - Editor 3D</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reset y estilos generales */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #241a10 100%);
+            color: #f0e6d2;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .contenedor-principal {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 20px;
+        }
+
+        .logo-header {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #d4af37, #ffd700, #f0e68c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            border: solid 2px #d4af37;
+            border-radius: 10px;
+            padding: 10px 20px;
+            display: inline-block;
+        }
+
+        .header-subtitle {
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', sans-serif;
+            font-size: 18px;
+            color: #a79967;
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+
+        .header-description {
+            color: #d4af37;
+            font-size: 14px;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        /* Grid de secciones */
+        .grid-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* Tarjeta de sección */
+        .seccion-card {
+            background: linear-gradient(145deg, #2b2219, #1f1912);
+            border: 1px solid #8b6b2e;
+            border-radius: 12px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .seccion-card:hover {
+            transform: translateY(-5px);
+            border-color: #d4af37;
+            box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
+        }
+
+        .seccion-titulo {
+            color: #d4af37;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            border-bottom: 2px solid #8b6b2e;
+            padding-bottom: 15px;
+        }
+
+        .seccion-titulo i {
+            font-size: 24px;
+        }
+
+        /* Lista de archivos */
+        .archivo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            margin: 8px 0;
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid #8b6b2e;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #f0e6d2;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .archivo-link:hover {
+            background: rgba(212, 175, 55, 0.15);
+            border-left-color: #d4af37;
+            padding-left: 20px;
+            color: #ffd700;
+        }
+
+        .archivo-icon {
+            font-size: 18px;
+            width: 25px;
+            text-align: center;
+            color: #d4af37;
+        }
+
+        .archivo-nombre {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .archivo-flecha {
+            color: #8b6b2e;
+            transition: color 0.2s ease;
+        }
+
+        .archivo-link:hover .archivo-flecha {
+            color: #d4af37;
+        }
+
+        /* Caja de información */
+        .info-box {
+            background: linear-gradient(145deg, #2b2219, #1f1912);
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.1);
+        }
+
+        .info-box-title {
+            color: #d4af37;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box p {
+            color: #f0e6d2;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* Botones de acción rápida */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .btn-action {
+            padding: 15px 25px;
+            border: 2px solid #8b6b2e;
+            background: rgba(212, 175, 55, 0.1);
+            color: #d4af37;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-action:hover {
+            background: linear-gradient(145deg, #d4af37, #ffd700);
+            color: #000000;
+            border-color: #d4af37;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logo-header {
+                font-size: 32px;
+                padding: 8px 15px;
+            }
+
+            .header {
+                padding: 30px 10px;
+                margin-bottom: 30px;
+            }
+
+            .grid-sections {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="contenedor-principal">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="logo-header">L-FUTURE</h1>
+            <h2 class="header-subtitle">Revoluciona tu forma de vestir</h2>
+            <p class="header-description">Editor 3D Profesional para Prendas de Vestir</p>
+        </div>
+
+            <!-- Acciones Rápidas -->
+        <div class="quick-actions">
+            <a href="register.html" class="btn-action">
+                <i class="fas fa-user-plus" style="margin-right: 8px;"></i> Crear Cuenta
+            </a>
+            <a href="login.html" class="btn-action">
+                <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Iniciar Sesión
+            </a>
+            <a href="editor-3d-pro.html" class="btn-action">
+                <i class="fas fa-paint-brush" style="margin-right: 8px;"></i> Editor 3D
+            </a>
+        </div>
+
+        <!-- Grid de Secciones -->
+        <div class="grid-sections">
+            <!-- Sección: Páginas Principales -->
+            <div class="seccion-card">
+                <h3 class="seccion-titulo">
+                    <i class="fas fa-file-alt"></i> Páginas Principales
+                </h3>
+                <a href="register.html" class="archivo-link">
+                    <span class="archivo-icon">📝</span>
+                    <span class="archivo-nombre">Registro</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+                <a href="login.html" class="archivo-link">
+                    <span class="archivo-icon">🔐</span>
+                    <span class="archivo-nombre">Login</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+                <a href="inicio.html" class="archivo-link">
+                    <span class="archivo-icon">🏠</span>
+                    <span class="archivo-nombre">Inicio</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+                <a href="perfil.html" class="archivo-link">
+                    <span class="archivo-icon">👤</span>
+                    <span class="archivo-nombre">Perfil</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+            </div>
+
+            <!-- Sección: Diseño 3D -->
+            <div class="seccion-card">
+                <h3 class="seccion-titulo">
+                    <i class="fas fa-cube"></i> Editor 3D
+                </h3>
+                <a href="editor-3d-pro.html" class="archivo-link">
+                    <span class="archivo-icon">⚡</span>
+                    <span class="archivo-nombre">Editor Profesional PRO</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+            </div>
+
+            <!-- Sección: Información -->
+            <div class="seccion-card">
+                <h3 class="seccion-titulo">
+                    <i class="fas fa-info-circle"></i> Información
+                </h3>
+                <a href="sobre nosotros.html" class="archivo-link">
+                    <span class="archivo-icon">ℹ️</span>
+                    <span class="archivo-nombre">Sobre Nosotros</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+                <a href="politica de privacidad.html" class="archivo-link">
+                    <span class="archivo-icon">⚖️</span>
+                    <span class="archivo-nombre">Política de Privacidad</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+                <a href="test-adapter.html" class="archivo-link">
+                    <span class="archivo-icon">🧪</span>
+                    <span class="archivo-nombre">Test Adapter</span>
+                    <i class="fas fa-chevron-right archivo-flecha"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Información sobre la Aplicación -->
+        <div class="info-box">
+            <h3 class="info-box-title">
+                <i class="fas fa-lightbulb"></i> Bienvenido a L-FUTURE
+            </h3>
+            <p>
+                L-FUTURE es una plataforma innovadora que te permite diseñar y personalizar prendas de vestir en tiempo real
+                utilizando nuestro motor 3D interactivo. Crea diseños únicos, guarda tus proyectos y exporta imágenes profesionales.
+            </p>
+        </div>
+
+        <!-- Características -->
+        <div class="info-box">
+            <h3 class="info-box-title">
+                <i class="fas fa-star"></i> Características Principales
+            </h3>
+            <p>
+                ✓ Autenticación segura con tokens JWT<br>
+                ✓ Editor 3D interactivo con Three.js<br>
+                ✓ Gestor de proyectos integrado<br>
+                ✓ Almacenamiento en localStorage<br>
+                ✓ Exportación de diseños como imágenes<br>
+                ✓ Interfaz intuitiva y responsiva
+            </p>
+        </div>
+
+        <!-- Footer Info -->
+        <div style="text-align: center; margin-top: 50px; padding-top: 30px; border-top: 1px solid #8b6b2e; color: #a79967;">
+            <p>© 2024 L-FUTURE. Todos los derechos reservados.</p>
+            <p style="font-size: 12px; margin-top: 10px;">Versión 0.1.0 - Dev Environment</p>
+        </div>
+    </div>
+
+    <script>
+        // ============ PROTECCIÓN: AUTENTICACIÓN REQUERIDA ============
+        // La página de inicio (index.html) SOLO es accesible si estás autenticado
+        // Si no tienes token válido, redirige a login.html
+
+        (function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+
+            // Si no hay token, redirigir a login
+            if (!token) {
+                console.log('[AUTH] No autenticado. Redirigiendo a login...');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Token existe, pero verificar que sea válido
+            verifyTokenWithBackend(token);
+        })();
+
+        async function verifyTokenWithBackend(token) {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/verify', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.warn('[AUTH] Token inválido o expirado');
+                    localStorage.removeItem('auth_token');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Token válido, página cargada correctamente
+                console.log('[AUTH] Usuario autenticado. Bienvenido!');
+
+            } catch (error) {
+                console.error('[AUTH] Error verificando token:', error);
+                // En caso de error de conexión, permitir ver la página (fallback)
+                console.log('[AUTH] Fallback: Mostrando página (sin conexión con backend)');
+            }
+        }
+    </script>
+</body>
+</html>

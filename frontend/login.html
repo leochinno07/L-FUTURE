@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Página de inicio de sesión para L-FUTURE, accede o crea tu cuenta fácilmente.">
+    <title>Inicio de sesión - L-FUTURE</title>
+    <link rel="stylesheet" href="login y register.css">
+    <!-- Importación de iconos de Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.json">
+    <script type="module" src="/main-loader.js" defer></script>
+    <script src="/register-sw.js" defer></script>
+    <style>
+        .error-message, .success-message {
+            display: none;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .error-message {
+            background-color: #000000;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success-message {
+            background-color: #000000;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor principal que centra el contenido -->
+    <div class="contenedor-principal" role="main">
+        <!-- Caja de login con estilos de tarjeta -->
+    <div class="caja-login" role="region" aria-labelledby="form-title">
+            <!-- Logo y marca -->
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+            </div>
+            <h2 class="subtitulo">Revoluciona tu forma de vestir</h2>
+            <h3 id="form-title" class="titulo-formulario">Inicio de sesión</h3>
+            
+            <!-- Mensajes de error y éxito -->
+            <div id="error-message" class="error-message" role="alert" aria-live="assertive" tabindex="-1"></div>
+            <div id="success-message" class="success-message" role="status" aria-live="polite" tabindex="-1"></div>
+            
+            <!-- Formulario de inicio de sesión -->
+            <form class="formulario-login" aria-describedby="form-title" novalidate>
+                <!-- Campo de nombre de usuario -->
+                <div class="campo-formulario">
+                    <label for="username" class="etiqueta">Nombre de usuario</label>
+                    <div class="contenedor-input">
+                        <i class="fas fa-user icono-campo"></i>
+                        <input type="text" id="username" name="username" placeholder="usuario123" required aria-required="true" autocomplete="username" pattern="^[a-zA-Z0-9_]{4,20}$" title="El nombre de usuario debe tener entre 4 y 20 caracteres y solo puede contener letras, números y guiones bajos.">
+                    </div>
+                </div>
+                
+                <!-- Campo de contraseña -->
+                <div class="campo-formulario">
+                    <label for="password" class="etiqueta">Contraseña</label>
+                    <div class="contenedor-input">
+                        <i class="fas fa-lock icono-campo"></i>
+                        <input type="password" id="password" name="password" placeholder="********" required aria-required="true" autocomplete="current-password">
+                        <i class="fas fa-eye icono-toggle-password" id="toggle-password" style="cursor: pointer; position: absolute; right: 15px;"></i>
+                    </div>
+                </div>
+                
+                <!-- Checkbox recordar usuario -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px;">
+                        <input type="checkbox" id="recordar" name="recordar" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer;">
+                        <span>Recordarme</span>
+                    </label>
+                    <div class="enlace-contraseña" style="margin: 0;">
+                        <a href="#">¿Olvidaste tu contraseña?</a>
+                    </div>
+                </div>
+                
+                <!-- Botón de envío del formulario -->
+                <button type="submit" class="boton-principal" aria-label="Iniciar sesión">Iniciar sesión</button>
+                
+                <!-- Separador visual -->
+                <div class="separador">
+                    <span>o continúa con</span>
+                </div>
+                
+                <!-- Botones de inicio de sesión con redes sociales -->
+                <div class="botones-sociales">
+                    <button type="button" class="boton-social">
+                        <i class="fab fa-google"></i>
+                        Google
+                    </button>
+                </div>
+
+                <!-- Enlace para redirigir al registro -->
+                <div class="enlace-registro">
+                    ¿No tienes una cuenta? <a href="register.html">Regístrate</a>
+                </div>
+            </form>
+            
+            <!-- Enlaces legales al pie de página -->
+            <div class="enlaces-legales">
+                <a href="politica de privacidad.html">Términos de Servicio</a>
+                <a href="politica de privacidad.html">Política de Privacidad</a>
+                <a href="politica de privacidad.html">Política de Cookies</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Script de autenticación -->
+    <script src="auth.js" defer></script>
+    <script>
+        function showError(msg) {
+            const err = document.getElementById('error-message');
+            const suc = document.getElementById('success-message');
+            if (suc) { suc.style.display = 'none'; suc.textContent = ''; }
+            if (err) { err.style.display = 'block'; err.textContent = msg; err.setAttribute('aria-live', 'assertive'); err.focus(); }
+        }
+        function showSuccess(msg) {
+            const err = document.getElementById('error-message');
+            const suc = document.getElementById('success-message');
+            if (err) { err.style.display = 'none'; err.textContent = ''; }
+            if (suc) { suc.style.display = 'block'; suc.textContent = msg; suc.setAttribute('aria-live', 'polite'); suc.focus(); }
+        }
+
+        // Función para mostrar/ocultar contraseña
+        function setupTogglePassword(inputId, toggleId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
+            
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        toggle.classList.remove('fa-eye');
+                        toggle.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        toggle.classList.remove('fa-eye-slash');
+                        toggle.classList.add('fa-eye');
+                    }
+                });
+            }
+        }
+        
+        // Cargar usuario guardado si existe
+        function cargarUsuarioGuardado() {
+            const usuarioGuardado = localStorage.getItem('remembered_username');
+            if (usuarioGuardado) {
+                document.getElementById('username').value = usuarioGuardado;
+                document.getElementById('recordar').checked = true;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const formulario = document.querySelector('.formulario-login');
+            
+            // Configurar botón de mostrar contraseña
+            setupTogglePassword('password', 'toggle-password');
+            
+            // Cargar usuario si estaba recordado
+            cargarUsuarioGuardado();
+            
+            formulario.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Obtener valores del formulario
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const recordar = document.getElementById('recordar').checked;
+                
+                // Validación básica y formato de usuario
+                if (!username || !password) {
+                    showError('Por favor completa todos los campos');
+                    return;
+                }
+                if (!/^[a-zA-Z0-9_]{4,20}$/.test(username)) {
+                    showError('El nombre de usuario debe tener entre 4 y 20 caracteres y solo puede contener letras, números y guiones bajos.');
+                    return;
+                }
+                
+                // Guardar usuario si marcó "Recordarme"
+                if (recordar) {
+                    localStorage.setItem('remembered_username', username);
+                } else {
+                    localStorage.removeItem('remembered_username');
+                }
+                
+                // Deshabilitar botón mientras se procesa
+                const submitBtn = formulario.querySelector('button[type="submit"]');
+                const btnOriginalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Iniciando sesión...';
+                
+                try {
+                    // Llamar a la API de login
+                    const result = await login(username, password);
+                    
+                    if (result.success) {
+                        showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
+                        
+                        // Redirigir a inicio después de 1 segundo
+                        setTimeout(() => {
+                            window.location.href = 'inicio.html';
+                        }, 1000);
+                    } else {
+                        showError(result.message || 'Usuario o contraseña incorrectos');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = btnOriginalText;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('Error de conexión. Verifica que el servidor esté corriendo.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = btnOriginalText;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  lfuture:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5000
+      - DEV_MODE=false
+      - ALLOWED_ORIGINS=*
+      - SECRET_KEY=your-secret-key-here
+      - JWT_SECRET_KEY=your-jwt-secret-key-here
+      - UPLOADS_DIR=uploads/
+      - DATABASE_NAME=lfuture.db
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+      - ./backend/lfuture.db:/app/backend/lfuture.db
+    restart: unless-stopped

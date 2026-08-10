@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Página de registro para L-FUTURE, crea tu cuenta fácilmente.">
+    <title>Registro - L-FUTURE</title>
+    <link rel="stylesheet" href="login y register.css">
+    <!-- Importación de iconos de Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.json">
+    <script type="module" src="/main-loader.js" defer></script>
+    <script src="/register-sw.js" defer></script>
+    <style>
+        .error-message, .success-message {
+            display: none;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .error-message {
+            background-color: #000000;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success-message {
+            background-color: #000000;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor principal que centra el contenido -->
+    <div class="contenedor-principal">
+        <!-- Caja de registro con estilos de tarjeta -->
+        <div class="caja-registro">
+            <!-- Logo y marca -->
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+            </div>
+            <h2 class="subtitulo">Revoluciona tu forma de vestir</h2>
+            <h3 class="titulo-formulario">Crear cuenta</h3>
+            
+            <!-- Mensajes de error y éxito -->
+            <div id="error-message" class="error-message" role="alert" aria-live="assertive" tabindex="-1"></div>
+            <div id="success-message" class="success-message" role="status" aria-live="polite" tabindex="-1"></div>
+            
+            <!-- Formulario de registro -->
+            <form class="formulario-registro">
+                <!-- Campo de nombre de usuario -->
+                <div class="campo-formulario">
+                    <label for="username" class="etiqueta">Nombre de usuario</label>
+                    <div class="contenedor-input">
+                        <i class="fas fa-user icono-campo"></i>
+                        <input type="text" id="username" name="username" placeholder="usuario123" required pattern="^[a-zA-Z0-9_]{4,20}$" title="El nombre de usuario debe tener entre 4 y 20 caracteres y solo puede contener letras, números y guiones bajos.">
+                    </div>
+                </div>
+
+                <!-- Campo de contraseña con indicador de fortaleza -->
+                <div class="campo-formulario">
+                    <label for="password" class="etiqueta">Contraseña</label>
+                    <div class="contenedor-input">
+                        <i class="fas fa-lock icono-campo"></i>
+                        <input type="password" id="password" name="password" placeholder="********" required autocomplete="new-password">
+                        <i class="fas fa-eye icono-toggle-password" id="toggle-password" style="cursor: pointer; position: absolute; right: 15px;"></i>
+                    </div>
+                    <!-- Indicador de fortaleza de contraseña -->
+                    <div class="password-strength" id="password-strength" style="display: none; margin-top: 5px;">
+                        <div class="strength-bar" style="height: 4px; background: #ddd; border-radius: 2px;">
+                            <div id="strength-bar-fill" style="height: 100%; width: 0%; background: #e74c3c; border-radius: 2px; transition: all 0.3s;"></div>
+                        </div>
+                        <small id="strength-text" style="color: #e74c3c;">Débil</small>
+                    </div>
+                
+                <!-- Campo de confirmación de contraseña -->
+                <div class="campo-formulario">
+                    <label for="confirm-password" class="etiqueta">Confirmar Contraseña</label>
+                    <div class="contenedor-input">
+                        <i class="fas fa-lock icono-campo"></i>
+                        <input type="password" id="confirm-password" name="confirm-password" placeholder="********" required autocomplete="new-password">
+                        <i class="fas fa-eye icono-toggle-password" id="toggle-confirm-password" style="cursor: pointer; position: absolute; right: 15px;"></i>
+                    </div>
+                    <small id="match-text" style="display: none; margin-top: 5px;"></small>
+                </div>
+                
+                <!-- Checkbox de términos y condiciones -->
+                <div class="campo-formulario" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="terminos" name="terminos" required style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-size: 14px;">Acepto los <a href="politica de privacidad.html" style="color: #FFD700;" target="_blank">Términos y Condiciones</a></span>
+                    </label>
+                </div>
+
+                <!-- Botón de envío del formulario -->
+                <button type="submit" class="boton-principal">Crear cuenta</button>
+                
+                <!-- Separador visual -->
+                <div class="separador">
+                    <span>o continúa con</span>
+                </div>
+                
+                <!-- Botones de registro con redes sociales -->
+                <div class="botones-sociales">
+                    <button type="button" class="boton-social">
+                        <i class="fab fa-google"></i>
+                        Google
+                    </button>
+                </div>
+
+                <!-- Enlace para redirigir al inicio de sesión -->
+                <div class="enlace-inicio-sesion">
+                    ¿Ya tienes una cuenta? <a href="login.html">Inicia sesión</a>
+                </div>
+            </form>
+            
+            <!-- Enlaces legales al pie de página -->
+            <div class="enlaces-legales">
+                <a href="politica de privacidad.html">Términos de Servicio</a>
+                <a href="politica de privacidad.html">Política de Privacidad</a>
+                <a href="politica de privacidad.html">Política de Cookies</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Script de autenticación -->
+    <script src="../inicio, perfil y diseños/auth.js" defer></script>
+    <script>
+        // Función para validar fortaleza de contraseña en tiempo real
+        function validarPasswordTiempoReal() {
+            const password = document.getElementById('password').value;
+            const strengthBar = document.getElementById('strength-bar-fill');
+            const strengthText = document.getElementById('strength-text');
+            const strengthContainer = document.getElementById('password-strength');
+            
+            // Mostrar indicador
+            if (password.length > 0) {
+                strengthContainer.style.display = 'block';
+            } else {
+                strengthContainer.style.display = 'none';
+                return;
+            }
+            
+            let strength = 0;
+            let color = '#e74c3c';
+            let text = 'Débil';
+            
+            // Verificar requisitos
+            const hasLength = password.length >= 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            
+            // Actualizar requisitos visualmente
+            document.getElementById('req-length').style.color = hasLength ? '#2ecc71' : '#888';
+            document.getElementById('req-upper').style.color = hasUpper ? '#2ecc71' : '#888';
+            document.getElementById('req-number').style.color = hasNumber ? '#2ecc71' : '#888';
+            document.getElementById('req-special').style.color = hasSpecial ? '#2ecc71' : '#888';
+            
+            // Calcular fortaleza
+            if (hasLength) strength += 25;
+            if (hasUpper) strength += 25;
+            if (hasNumber) strength += 25;
+            if (hasSpecial) strength += 25;
+            
+            // Determinar color y texto
+            if (strength === 100) {
+                color = '#2ecc71';
+                text = 'Fuerte';
+            } else if (strength >= 75) {
+                color = '#f39c12';
+                text = 'Buena';
+            } else if (strength >= 50) {
+                color = '#e67e22';
+                text = 'Media';
+            }
+            
+            strengthBar.style.width = strength + '%';
+            strengthBar.style.background = color;
+            strengthText.style.color = color;
+            strengthText.textContent = text;
+        }
+        
+        // Función para verificar coincidencia de contraseñas
+        function verificarCoincidencia() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const matchText = document.getElementById('match-text');
+            
+            if (confirmPassword.length > 0) {
+                matchText.style.display = 'block';
+                if (password === confirmPassword) {
+                    matchText.textContent = '✓ Las contraseñas coinciden';
+                    matchText.style.color = '#2ecc71';
+                } else {
+                    matchText.textContent = '✗ Las contraseñas no coinciden';
+                    matchText.style.color = '#e74c3c';
+                }
+            } else {
+                matchText.style.display = 'none';
+            }
+        }
+        
+        // Función para mostrar/ocultar contraseña
+        function setupTogglePassword(inputId, toggleId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
+            
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        toggle.classList.remove('fa-eye');
+                        toggle.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        toggle.classList.remove('fa-eye-slash');
+                        toggle.classList.add('fa-eye');
+                    }
+                });
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const formulario = document.querySelector('.formulario-registro');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            
+            // Configurar validación en tiempo real
+            passwordInput.addEventListener('input', validarPasswordTiempoReal);
+            confirmPasswordInput.addEventListener('input', verificarCoincidencia);
+            passwordInput.addEventListener('input', verificarCoincidencia);
+            
+            // Configurar botones de mostrar contraseña
+            setupTogglePassword('password', 'toggle-password');
+            setupTogglePassword('confirm-password', 'toggle-confirm-password');
+            
+            formulario.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Obtener valores del formulario
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                const terminos = document.getElementById('terminos').checked;
+                
+                // Validación básica y formato de usuario
+                if (!username || !password || !confirmPassword) {
+                    showError('Por favor completa todos los campos');
+                    return;
+                }
+                if (!/^[a-zA-Z0-9_]{4,20}$/.test(username)) {
+                    showError('El nombre de usuario debe tener entre 4 y 20 caracteres y solo puede contener letras, números y guiones bajos.');
+                    return;
+                }
+                if (!terminos) {
+                    showError('Debes aceptar los términos y condiciones');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    showError('Las contraseñas no coinciden');
+                    return;
+                }
+                
+                // Deshabilitar botón mientras se procesa
+                const submitBtn = formulario.querySelector('button[type="submit"]');
+                const btnOriginalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creando cuenta...';
+                
+                try {
+                    // Llamar a la API de registro
+                    const result = await register(username, password, confirmPassword);
+                    
+                    if (result.success) {
+                        showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
+                        
+                        // Redirigir a login después de 2 segundos
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    } else {
+                        showError(result.message || 'Error al crear la cuenta');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = btnOriginalText;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('Error de conexión. Verifica que el servidor esté corriendo.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = btnOriginalText;
+                }
+            });
+        });
+        
+        function showError(msg) {
+            const err = document.getElementById('error-message');
+            const suc = document.getElementById('success-message');
+            if (suc) { suc.style.display = 'none'; suc.textContent = ''; }
+            if (err) { err.style.display = 'block'; err.textContent = msg; err.setAttribute('role', 'alert'); err.setAttribute('aria-live', 'assertive'); err.focus(); }
+        }
+        function showSuccess(msg) {
+            const err = document.getElementById('error-message');
+            const suc = document.getElementById('success-message');
+            if (err) { err.style.display = 'none'; err.textContent = ''; }
+            if (suc) { suc.style.display = 'block'; suc.textContent = msg; suc.setAttribute('role', 'status'); suc.setAttribute('aria-live', 'polite'); suc.focus(); }
+        }
+    </script>
+</body>
+</html>

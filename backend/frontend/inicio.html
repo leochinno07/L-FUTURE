@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L-FUTURE - Innovación en Moda Digital</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="inicio.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+    <script src="config.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script src="api.js"></script>
+    <script src="idiomas.js"></script>
+    <script src="user-ui.js"></script>
+<style>
+    /* inicio.css - Estilos específicos para la página de inicio */
+
+/* Proyectos en galería */
+.galeria-proyectos {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.proyecto-galeria {
+    background: rgba(10, 10, 10, 0.7);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.proyecto-galeria:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.imagen-proyecto {
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+}
+
+.imagen-proyecto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.proyecto-galeria:hover .imagen-proyecto img {
+    transform: scale(1.05);
+}
+
+.estado-proyecto-galeria {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.proyecto-galeria h4 {
+    padding: 15px 15px 5px;
+    color: #FFD700;
+    font-size: 1.1rem;
+}
+
+.descripcion-proyecto {
+    padding: 0 15px 15px;
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Galería con scroll horizontal */
+.contenedor-scroll {
+    overflow-x: auto;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.galeria-scroll {
+    display: flex;
+    gap: 20px;
+    padding: 5px;
+}
+
+.proyecto-scroll {
+    flex: 0 0 250px;
+    background: rgba(10, 10, 10, 0.7);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 12px rgba(218,165,32,0.10);
+    position: relative;
+    cursor: pointer;
+}
+
+.proyecto-scroll:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(218, 165, 32, 0.3);
+    border: 2px solid #FFD700;
+    z-index: 2;
+}
+
+.imagen-proyecto {
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+}
+
+.imagen-proyecto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+    border-radius: 8px;
+}
+
+.estado-proyecto-galeria {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 3;
+}
+
+.proyecto-scroll h4 {
+    padding: 15px 15px 5px;
+    color: #FFD700;
+    font-size: 1.1rem;
+    text-shadow: 0 2px 8px #222;
+}
+
+.descripcion-proyecto {
+    padding: 0 15px 15px;
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+    min-height: 40px;
+}
+
+.proyecto-scroll .link-proyecto {
+    display: block;
+    margin: 10px 15px 15px;
+    color: #FFD700;
+    font-weight: bold;
+    text-decoration: underline;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.proyecto-scroll .link-proyecto:hover {
+    color: #fff;
+}
+
+.proyecto-scroll .btn-crear-nuevo {
+    font-size:1.2rem;
+    padding:30px 40px;
+    border-radius:12px;
+    background:#FFD700;
+    color:#222;
+    font-weight:bold;
+    border:none;
+    box-shadow:0 2px 12px #FFD700;
+    cursor:pointer;
+    margin: 0 auto;
+    display: block;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.proyecto-scroll .btn-crear-nuevo:hover {
+    background: #DAA520;
+    box-shadow: 0 4px 16px #FFD700;
+}
+
+/* Vista previa 3D */
+.vista-previa-3d {
+    margin: 25px 0;
+}
+
+.contenedor-modelo-3d {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .contenedor-modelo-3d {
+        flex-direction: row;
+        align-items: stretch;
+    }
+}
+
+.modelo-3d {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1000px;
+}
+
+/* Estilos para la vista previa de franela (2D SVG) */
+.modelo-3d #tshirt-svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.35s ease, filter 0.35s ease;
+}
+.modelo-3d #tshirt-body {
+    transition: fill 0.25s ease, stroke 0.25s ease;
+}
+.color-palette {
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+    justify-content:center;
+}
+.color-swatch {
+    width:28px;
+    height:28px;
+    border-radius:6px;
+    cursor:pointer;
+    border:2px solid rgba(255,255,255,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35) inset;
+}
+.color-swatch.active {
+    outline: 3px solid rgba(255,215,0,0.12);
+    transform: scale(1.08);
+}
+
+
+.imagen-3d {
+    max-width: 80%;
+    transition: transform 0.5s ease;
+    transform-style: preserve-3d;
+}
+
+.controles-3d {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-control-3d {
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #000;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-control-3d:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.7);
+}
+
+.info-modelo-3d {
+    flex: 1;
+    padding: 20px;
+    background: rgba(10, 10, 10, 0.5);
+    border-radius: 10px;
+}
+
+.info-modelo-3d h4 {
+    color: #FFD700;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.info-modelo-3d p {
+    color: #aaa;
+    margin-bottom: 20px;
+}
+
+.opciones-diseno {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.opcion-diseno {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.opcion-diseno span {
+    color: #FFD700;
+    min-width: 60px;
+}
+
+.selector-color {
+    display: flex;
+    gap: 8px;
+}
+
+.color-option {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.color-option:hover, .color-option.active {
+    transform: scale(1.2);
+    border-color: #FFD700;
+}
+
+.selector-talla {
+    background: rgba(10, 10, 10, 0.7);
+    color: white;
+    border: 1px solid rgba(218, 165, 32, 0.3);
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.selector-talla:focus {
+    outline: none;
+    border-color: #FFD700;
+}
+
+/* Botones */
+.btn-ver-todos {
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+.btn-ver-todos:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(218, 165, 32, 0.4);
+}
+
+/* Sección Diseño 3D */
+.diseño-3d {
+    text-align: center;
+}
+
+.btn-diseñar {
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+    color: #000;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+}
+
+.btn-diseñar:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(218, 165, 32, 0.4);
+}
+
+/* Redes sociales */
+.redes-sociales {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.red-social {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #FFD700;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.red-social:hover {
+    color: #ffffff;
+    transform: translateX(5px);
+}
+
+/* Derechos de autor */
+.politica-privacidad {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #aaa;
+    text-align: center;
+}
+
+.politica-privacidad:hover {
+    text-decoration: underline;
+    color: #FFD700;
+}
+
+.centrar-boton {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.derechos {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(218, 165, 32, 0.2);
+    text-align: center;
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+/* Responsive específico para inicio */
+@media (max-width: 768px) {
+    .galeria-proyectos {
+        grid-template-columns: 1fr;
+    }
+    
+    .redes-sociales {
+        flex-direction: column;
+    }
+    
+    .modelo-3d {
+        height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .contenedor-modelo-3d {
+        flex-direction: column;
+    }
+    
+    .opcion-diseno {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Avatar con iniciales - diseño futurista */
+.avatar-iniciales {
+    width: 64px;
+    height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #000000 0%, #111111 60%);
+    color: #FFD700;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 14px rgba(218,165,32,0.15), 0 0 10px rgba(255,215,0,0.05) inset;
+    border: 2px solid rgba(255,215,0,0.12);
+    text-transform: uppercase;
+}
+
+.avatar-iniciales.small {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+
+/* Ajustes para encabezado donde el avatar es más pequeño */
+.avatar-encabezado .avatar-iniciales {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+
+.encabezado-username {
+    color: #FFD700;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-top: 6px;
+    text-align: center;
+}
+</style>
+<body>
+    <script src="auth.js"></script>
+    <script>
+        // Verificar autenticación antes de cargar la página
+        if (!requireAuth()) {
+            // Si no está autenticado, requireAuth() redirige automáticamente
+        }
+    </script>
+    <div class="contenedor-principal">
+        <!-- Barra lateral de navegación -->
+        <aside class="barra-lateral">
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+                <p class="eslogan">Innovación en moda digital</p>
+            </div>
+            <nav class="menu-navegacion">
+                <ul>
+                    <li><a href="inicio.html" class="active"><i class="fas fa-home"></i> <span>Inicio</span></a></li>
+                    <li><a href="diseños1.0.html"><i class="fas fa-shirt"></i> <span>Mis Proyectos</span></a></li>
+                    <li><a href="diseños L-Future.html"><i class="fas fa-globe-americas"></i> <span>Proyectos L-FUTURE</span></a></li>
+                    <li><a href="sobre nosotros.html"><i class="fas fa-users"></i> <span>Sobre Nosotros</span></a></li>
+                    <li><a href="diseños-3d.html"><i class="fas fa-paint-brush"></i> <span>Diseños-3D</span></a></li>
+                    <li><a href="perfil.html"><i class="fas fa-cog"></i> <span>Configuración</span></a></li>
+                </ul>
+            </nav>
+              <div class="info-usuario-lateral">
+                <div class="avatar">
+                    <img src="" alt="Avatar usuario" class="user-avatar">
+                </div>
+                <h3 class="user-name">Usuario</h3>
+                <span class="badge user-type-badge">Usuario</span>
+            </div>
+            <button class="btn-signout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+            <button class="btn-cerrar-movil">
+                <i class="fas fa-times"></i>
+            </button>
+        </aside>
+            <!-- Contenido principal -->
+        <main class="contenido-principal">
+            <header class="encabezado">
+                <div class="encabezado-izquierda">
+                    <button class="btn-menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2>INICIO L-FUTURE</h2>
+                </div>
+                <div class="avatar-encabezado">
+                    <!-- Reemplazamos foto por iniciales en el encabezado -->
+                    <div class="avatar-iniciales user-avatar" role="img" aria-label="Avatar de usuario"></div>
+                    <!-- Nombre de usuario en tiempo real debajo del avatar (actualizado por JS) -->
+                    <div class="encabezado-username"></div>
+                </div>
+            </header>
+            <!-- Sección de estadísticas -->
+            <section class="seccion-estadisticas">
+                <div class="tarjeta-estadistica">
+                    <div class="icono-estadistica">
+                        <i class="fas fa-shirt"></i>
+                    </div>
+                    <div class="contenido-estadistica">
+                        <h3 id="total-proyectos">0</h3>
+                        <p>Proyectos Locales</p>
+                    </div>
+                </div>
+                <div class="tarjeta-estadistica">
+                    <div class="icono-estadistica">
+                        <i class="fas fa-tshirt"></i>
+                    </div>
+                    <div class="contenido-estadistica">
+                        <h3>1.0</h3>
+                        <p>Version de la App</p>
+                    </div>
+                </div>
+                <div class="tarjeta-estadistica">
+                    <div class="icono-estadistica">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <div class="contenido-estadistica">
+                        <h3>1</h3>
+                        <p>Proyectos L-FUTURE</p>
+                    </div>
+                </div>
+            </section>
+            <!-- Sección Mis Proyectos - Solo galería dinámica por JS -->
+            <section>
+                <h3 class="titulo-seccion">Mis Proyectos</h3>
+                <div class="tarjeta-perfil">
+                    <div class="contenedor-scroll">
+                        <div class="galeria-scroll">
+                            <!-- Los proyectos del usuario se renderizan aquí dinámicamente por JS -->
+                        </div>
+                        <div class="proyecto-scroll" id="proyecto-crear-nuevo">
+                            <button class="btn-crear-nuevo" onclick="window.location.href='diseños-3d.html'">
+                                <i class="fas fa-plus"></i> CREAR NUEVO PROYECTO
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn-ver-todos">Ver Todos los Proyectos <a href="diseños1.0.html">aquí</a></button>
+                </div>
+            </section>
+            <!-- Sección Proyectos L-FUTURE - Enlace corregido -->
+            <section>
+                <h3 class="titulo-seccion">Proyectos L-FUTURE</h3>
+                <div class="tarjeta-perfil">
+                    <p style="color: #999; margin-bottom: 20px;">Descubre los diseños oficiales de L-FUTURE, creados por nuestro equipo de diseñadores profesionales.</p>
+                    <div class="centrar-boton">
+                        <a href="diseños L-Future.html" class="btn-diseñar">
+                            <i class="fas fa-globe-americas"></i> Ver Proyectos L-FUTURE
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- Sección Diseño 3D - Mejorada con vista previa interactiva -->
+            <section>
+                <h3 class="titulo-seccion">DISEÑO 3D DE L-FUTURE</h3>
+                <div class="tarjeta-perfil diseño-3d">
+                    <p>En esta sección podrás crear tus proyectos y guardarlos local o globalmente. Diseña tu próxima prenda con nuestra herramienta 3D.</p>
+                    
+                    <div class="vista-previa-3d">
+                        <div class="contenedor-modelo-3d">
+                                                        <div class="modelo-3d" id="modelo3d">
+                                                                <!-- SVG 2D estilizado para vista previa de franela (manga corta, cuello) -->
+                                                                <svg id="tshirt-svg" class="imagen-3d" width="320" height="380" viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vista previa de franela">
+                                                                    <defs>
+                                                                        <linearGradient id="tshirt-grad" x1="0" x2="1" y1="0" y2="1">
+                                                                            <stop offset="0%" stop-color="#1a1a1a" stop-opacity="0.12"/>
+                                                                            <stop offset="100%" stop-color="#000000" stop-opacity="0.12"/>
+                                                                        </linearGradient>
+                                                                        <filter id="tshirt-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                                                            <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000" flood-opacity="0.45"/>
+                                                                        </filter>
+                                                                    </defs>
+                                                                    <g id="tshirt-group" filter="url(#tshirt-shadow)">
+                                                                        <!-- Body -->
+                                                                        <path id="tshirt-body" d="M60 70 C52 70, 52 50, 80 50 L120 50 C130 50, 140 60, 160 60 C180 60, 190 50, 210 50 L250 50 C278 50, 278 70, 250 70 L220 92 L220 320 C220 335, 200 355, 160 360 C120 355, 100 335, 100 320 L100 92 Z" fill="#1a1a1a" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+                                                                        <!-- Sleeves subtle cutouts -->
+                                                                        <path id="tshirt-sleeve-left" d="M60 70 L35 110 C28 120, 45 135, 70 120 L75 95 Z" fill="#1a1a1a" opacity="0.06"/>
+                                                                        <path id="tshirt-sleeve-right" d="M250 70 L275 110 C282 120, 265 135, 240 120 L235 95 Z" fill="#1a1a1a" opacity="0.06"/>
+                                                                        <!-- Collar -->
+                                                                        <path id="tshirt-collar" d="M120 50 C135 35, 185 35, 200 50 L190 58 C170 45, 150 45, 130 58 Z" fill="#000" opacity="0.12"/>
+                                                                    </g>
+                                                                </svg>
+                                                                <div class="controles-3d">
+                                                                        <button class="btn-control-3d" id="rotar-izq"><i class="fas fa-undo"></i></button>
+                                                                        <button class="btn-control-3d" id="rotar-der"><i class="fas fa-redo"></i></button>
+                                                                        <button class="btn-control-3d" id="zoom-in"><i class="fas fa-search-plus"></i></button>
+                                                                        <button class="btn-control-3d" id="zoom-out"><i class="fas fa-search-minus"></i></button>
+                                                                </div>
+                                                        </div>
+                            <div class="info-modelo-3d">
+                                <h4>Personaliza tu Franela</h4>
+                                <p>Gira el modelo para verlo desde todos los ángulos y comienza a diseñar.</p>
+                                <div class="opciones-diseno">
+                                    <div class="opcion-diseno">
+                                        <span>Color:</span>
+                                        <div class="selector-color">
+                                            <div class="color-option" style="background-color: #000000;"></div>
+                                            <div class="color-option" style="background-color: #FF0000;"></div>
+                                            <div class="color-option" style="background-color: #0000FF;"></div>
+                                            <div class="color-option" style="background-color: #FFFFFF;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="opcion-diseno">
+                                        <span>Talla:</span>
+                                        <select class="selector-talla">
+                                            <option>S</option>
+                                            <option>M</option>
+                                            <option>L</option>
+                                            <option>XL</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="centrar-boton">
+                        <button class="btn-diseñar">
+                            <i class="fas fa-pen-fancy"></i> Comenzar a Diseñar en 3D
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- Sección Sobre L-FUTURE -->
+            <section>
+                <h3 class="titulo-seccion">SOBRE L-FUTURE</h3>
+                <div class="tarjeta-perfil">
+                    <p>L-FUTURE es innovación, creación y estilo al mismo tiempo. Este proyecto busca revolucionar la moda digital y que puedas crear tus prendas, así como lo escuchas al estilo que desees a un solo click. El desarrollo de esta marca viene de la búsqueda de libertad, poder expresar algo por medio de cómo te vistes y qué mejor que seas tú mismo creando. El desarrollo de esta página viene a partir del Final Project de CS50X de HARVARD 2025, para seguir desarrollándolo contamos con tu apoyo en nuestra prenda básica.</p>
+                    <div class="redes-sociales">
+                        <a href="#" class="red-social"><i class="fab fa-instagram"></i> lean_chinx</a>
+                        <a href="#" class="red-social"><i class="fab fa-instagram"></i> Lfuture_oficial</a>
+                        <a href="#" class="red-social"><i class="fab fa-github"></i> leochinno07</a>
+                        <a href="#" class="red-social"><i class="fab fa-github"></i> CS50x Harvard 2025 en edX</a>
+                    </div>
+                    <div class="derechos">
+                        <p>© 2025 Leandro Rojas único y propietario autor de esta obra. Todos los derechos reservados.</p>
+                        <a href="politica de privacidad.html" class="politica-privacidad">Política de Privacidad</a> | <a href="politica de privacidad.html" class="politica-privacidad">Términos de Servicio</a>
+                    </div> 
+                    <div class="centrar-boton">
+                        <button class="btn-diseñar">
+                            <i class="fas fa-info-circle"></i> Más sobre L-FUTURE
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    /**
+ * inicio.js - Gestión de la página de inicio
+ * Carga proyectos reales del usuario desde la API
+ */
+
+// ============================================================================
+// CARGAR PROYECTOS PREVIEW (2 PROYECTOS)
+// ============================================================================
+
+
+// Galería de proyectos: solo JS, solo usuario autenticado
+async function cargarProyectosPreview() {
+    const contenedor = document.querySelector('.galeria-scroll');
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+    try {
+        const response = await getProyectos();
+        let proyectos = [];
+        if (response.success && response.data && response.data.success) {
+            proyectos = response.data.proyectos || [];
+        }
+        if (proyectos.length === 0) {
+            // Sin proyectos: solo botón crear
+            const div = document.createElement('div');
+            div.style.textAlign = 'center';
+            div.style.padding = '60px 20px';
+            div.style.color = '#999';
+            div.innerHTML = `
+                <i class="fas fa-paint-brush" style="font-size: 64px; color: #FFD700; margin-bottom: 20px;"></i>
+                <h3 style="color: #FFD700; margin-bottom: 10px;">¡Comienza a diseñar!</h3>
+                <p>Aún no tienes proyectos guardados.</p>
+                <button id="btn-crear-proyecto" style="margin-top: 24px; padding: 16px 32px; background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer;">
+                    <i class="fas fa-pen-fancy"></i> Crear Nuevo Proyecto
+                </button>
+            `;
+            contenedor.appendChild(div);
+            document.getElementById('btn-crear-proyecto').onclick = () => {
+                window.location.href = 'diseños-3d.html';
+            };
+            return;
+        }
+        // Renderizar proyectos del usuario
+        proyectos.forEach(proyecto => {
+            const badge = proyecto.estado === 'Completado' ? 'badge-completado' : 'badge-progreso';
+            const estadoTexto = proyecto.estado || 'En Progreso';
+            const div = document.createElement('div');
+            div.className = 'proyecto-scroll';
+            div.innerHTML = `
+                <div class="imagen-proyecto">
+                    <img loading="lazy" src="${proyecto.imagen || 'https://placehold.co/300x400/1a1a1a/FFD700?text=Proyecto'}" alt="${proyecto.nombre}">
+                    <div class="estado-proyecto-galeria">
+                        <span class="badge ${badge}">${estadoTexto}</span>
+                    </div>
+                </div>
+                <h4>${proyecto.nombre}</h4>
+                <p class="descripcion-proyecto">${proyecto.descripcion || 'Sin descripción'}</p>
+            `;
+            div.style.cursor = 'pointer';
+            div.onclick = () => {
+                window.location.href = `diseños-3d.html?proyecto=${encodeURIComponent(proyecto.id)}`;
+            };
+            contenedor.appendChild(div);
+        });
+        // Botón grande para crear nuevo proyecto
+        const btnCrear = document.createElement('div');
+        btnCrear.className = 'proyecto-scroll';
+        btnCrear.style.display = 'flex';
+        btnCrear.style.alignItems = 'center';
+        btnCrear.style.justifyContent = 'center';
+        btnCrear.style.background = 'linear-gradient(90deg, #FFD700 60%, #DAA520 100%)';
+        btnCrear.style.cursor = 'pointer';
+        btnCrear.innerHTML = `<button style="font-size:1.2rem;padding:30px 40px;border-radius:12px;background:#FFD700;color:#222;font-weight:bold;border:none;box-shadow:0 2px 12px #FFD700;cursor:pointer;">+ CREAR NUEVO PROYECTO</button>`;
+        btnCrear.onclick = () => {
+            window.location.href = 'diseños-3d.html';
+        };
+        contenedor.appendChild(btnCrear);
+    } catch (error) {
+        contenedor.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar proyectos.</p>';
+    }
+}
+
+// ============================================================================
+// BOTÓN VER TODOS LOS PROYECTOS
+// ============================================================================
+
+
+
+
+// Usa la función robusta de auth.js para actualizar nombre/iniciales
+function actualizarNombreYAvatar() {
+    if (typeof updateUserUI === 'function') {
+        updateUserUI();
+    } else {
+        // Fallback mínimo
+        const user = getUser && typeof getUser === 'function' ? getUser() : null;
+        let nombre = user ? (user.nombre_completo || user.username || 'Usuario') : 'Usuario';
+        document.querySelectorAll('.user-name').forEach(el => {
+            el.textContent = nombre;
+        });
+        // Actualizar nombre en el encabezado si existe
+        const headerNameEl = document.querySelector('.encabezado-username');
+        if (headerNameEl) headerNameEl.textContent = nombre;
+        let iniciales = 'US';
+        if (typeof getInitialsAvatar === 'function') {
+            iniciales = getInitialsAvatar(nombre);
+        } else {
+            iniciales = nombre.trim().split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
+        }
+        document.querySelectorAll('.avatar-iniciales').forEach(el => {
+            el.textContent = iniciales;
+            el.setAttribute('aria-label', `Avatar de ${nombre}`);
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarProyectosPreview();
+    actualizarNombreYAvatar();
+    // Botón Ver Todos
+    const btnVerTodos = document.querySelector('.btn-ver-todos');
+    if (btnVerTodos) {
+        btnVerTodos.addEventListener('click', function() {
+            window.location.href = 'diseños1.0.html';
+        });
+    }
+    // Botón Diseñar en 3D
+    const btnDisenar = document.querySelectorAll('.btn-diseñar');
+    btnDisenar.forEach(btn => {
+        btn.addEventListener('click', function() {
+            window.location.href = 'diseños-3d.html';
+        });
+    });
+});
+
+    </script>
+
+    <script>
+        // JavaScript para el menú móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnMenu = document.querySelector('.btn-menu');
+            const barraLateral = document.querySelector('.barra-lateral');
+            const btnCerrarMovil = document.querySelector('.btn-cerrar-movil');
+            
+            btnMenu.addEventListener('click', function() {
+                barraLateral.classList.add('activa');
+            });
+            
+            btnCerrarMovil.addEventListener('click', function() {
+                barraLateral.classList.remove('activa');
+            });
+            
+            // Efectos de hover mejorados para las tarjetas de proyecto
+            const tarjetasProyecto = document.querySelectorAll('.proyecto-galeria, .proyecto-scroll');
+            tarjetasProyecto.forEach(tarjeta => {
+                tarjeta.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.transition = 'transform 0.3s ease';
+                });
+                
+                tarjeta.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Simulación de controles 3D básicos
+            const imagen3d = document.getElementById('tshirt-svg') || document.querySelector('.imagen-3d');
+            let rotacion = 0;
+            let escala = 1;
+            // Paleta de colores para la franela (ajustable)
+            const palette = ['#000000', '#FFFFFF', '#FFD700', '#FF5733', '#3498DB', '#2ECC71'];
+
+            // Crear paleta visual en el DOM
+            const infoModelo = document.querySelector('.info-modelo-3d .opciones-diseno');
+            if (infoModelo) {
+                const cont = document.createElement('div');
+                cont.className = 'color-palette';
+                palette.forEach(col => {
+                    const sw = document.createElement('div');
+                    sw.className = 'color-swatch';
+                    sw.style.backgroundColor = col;
+                    sw.dataset.color = col;
+                    sw.addEventListener('click', function() {
+                        document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
+                        sw.classList.add('active');
+                        aplicarColorFranela(col);
+                    });
+                    cont.appendChild(sw);
+                });
+                infoModelo.appendChild(cont);
+                // activar primer color por defecto
+                cont.querySelector('.color-swatch').classList.add('active');
+            }
+            
+            document.getElementById('rotar-izq').addEventListener('click', function() {
+                rotacion -= 15;
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+            
+            document.getElementById('rotar-der').addEventListener('click', function() {
+                rotacion += 15;
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+            
+            document.getElementById('zoom-in').addEventListener('click', function() {
+                escala = Math.min(1.6, escala + 0.1);
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+            
+            document.getElementById('zoom-out').addEventListener('click', function() {
+                escala = Math.max(0.6, escala - 0.1);
+                if (imagen3d) imagen3d.style.transform = `rotateY(${rotacion}deg) scale(${escala})`;
+            });
+
+            // Aplica color al body del SVG (visualmente atractivo con gradiente)
+            function aplicarColorFranela(color) {
+                const body = document.getElementById('tshirt-body');
+                if (!body) return;
+                // aplicar un ligero degradado visual via fill
+                try {
+                    body.style.fill = color;
+                } catch (e) {
+                    // fallback
+                    body.setAttribute('fill', color);
+                }
+            }
+
+            // Inicializar color por defecto
+            aplicarColorFranela(palette[0]);
+
+            // Actualizar contador de proyectos (max 10)
+            (async function(){
+                try{
+                    if(typeof getProyectos === 'function'){
+                        const res = await getProyectos();
+                        if(res && res.success && res.data && Array.isArray(res.data.proyectos)){
+                            const total = Math.min(res.data.proyectos.length, 10);
+                            const el = document.getElementById('total-proyectos');
+                            if(el) el.textContent = total.toString();
+                        } else if(res && res.success && res.data && res.data.proyectos === undefined && Array.isArray(res.data)){
+                            // fallback if API returns list directly
+                            const total = Math.min(res.data.length, 10);
+                            const el = document.getElementById('total-proyectos'); if(el) el.textContent = total.toString();
+                        }
+                    }
+                }catch(e){ console.warn('No se pudo obtener total de proyectos', e); }
+            })();
+
+            // Al hacer click en 'Comenzar a Diseñar en 3D' pasar color seleccionado como query param
+            document.querySelectorAll('.btn-diseñar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const active = document.querySelector('.color-swatch.active');
+                    const color = active ? active.dataset.color.replace('#','') : '000000';
+                    window.location.href = `diseños-3d.html?color=${encodeURIComponent(color)}`;
+                });
+            });
+            
+            // Cambio de color en las opciones de diseño
+            const colorOptions = document.querySelectorAll('.color-option');
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+    <script src="./register-sw.js" defer></script>
+    <script type="module" src="./main-loader.js"></script>
+    <script src="shared/layout-init.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "tshirt-3d-move-app-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Frontend for L-FUTURE - 3D T-shirt designer (development tooling)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "eslint frontend --ext .js,.jsx",
+    "format": "prettier --write frontend"
+  },
+  "devDependencies": {}
+}

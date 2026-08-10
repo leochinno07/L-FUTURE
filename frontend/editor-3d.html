@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor 3D PRO - Franela Delantera/Trasera - L-FUTURE</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@700&family=Lora:wght@700&family=Bebas+Neue&family=Oswald:wght@700&family=Orbitron:wght@700&family=Pacifico&family=Press+Start+2P&family=Poiret+One&family=Russo+One&family=Playfair+Display:wght@700&family=Yellowtail&family=Quicksand:wght@700&family=Major+Mono+Display&family=Permanent+Marker&family=Fira+Mono:wght@700&family=Anton&family=Space+Mono:wght@700&family=Alfa+Slab+One&family=Tilt+Neon:wght@700&family=Saira+Extra+Condensed:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root { --main:#d4af37; --border:#b09e65; --bg:#18130c; }
+    body {margin:0;padding:0;background:var(--bg);color:#ffe;font-family:system-ui,sans-serif;overflow:hidden;}
+    .layout {display:grid;grid-template-columns:250px 1fr 260px;grid-template-rows:60px 1fr;height:100vh;}
+    header{grid-column:1/-1;background:#221a10;border-bottom:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:20px;}
+    .aside,.aside-right{background:#221a10;padding:15px 10px;border-top:2px solid var(--border);overflow:auto;position:sticky;top:60px;height:calc(100vh - 60px);} 
+    .aside{border-right:2px solid var(--border);}
+    .aside-right{border-left:2px solid var(--border);}
+    .sideblock{background:#20190e;border-radius:10px;margin-bottom:15px;border:1.5px solid var(--border);box-shadow:0 2px 12px #0001;padding:13px;}
+    label{font-size:13px;color:#c3b277;}
+    .panel-label{font-weight:bold;color:var(--main);}
+    .btn{background:var(--main);color:#18130c;border:none;border-radius:7px;padding:6px 14px;font-weight:bold;font-size:13px;cursor:pointer;}
+    .btn:active{background:#fff4c4;}
+    .btn-small{padding:4px 7px;border-radius:50%;font-size:13px;}
+    .color-preset{width:32px;height:32px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;cursor:pointer;border:2px solid #775e1c;font-size:16px;line-height:1;}
+    .color-preset.small{width:24px;height:24px;border-radius:5px;margin-right:6px;}
+    .color-preset.selected{outline:2px solid #ffd700;}
+    .canvas-wrap{display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:flex-start;padding:12px;overflow:auto;padding-top:18px;}
+    .scene-title{color:#f6eab5;font-weight:700;margin-bottom:6px;display:flex;gap:8px;align-items:center;}
+    .scene-box{background:linear-gradient(110deg,#24190e 60%,#16100b 100%);border-radius:13px;padding:10px;width:100%;max-width:820px;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 35px #000a;position:relative;}
+    canvas{background:#18120b;border-radius:13px;box-shadow:0 0 22px #000c,inset 0 8px 35px #fff2;cursor:grab;touch-action:none;display:block;}
+    .element-handle{position:absolute;width:18px;height:18px;border-radius:50%;background:var(--main);border:2px solid #fff;z-index:1001;opacity:0.95;cursor:pointer;display:none;box-shadow:0 4px 12px #0008;}
+    .element-handle.visible{display:block;}
+    .mini-handle{position:absolute;z-index:1002;display:none;font-size:12px;}
+    .mini-handle.visible{display:flex;}
+    .mini-handle button{background:#fff6;border:1px solid #b09e65;color:#20190e;border-radius:6px;padding:4px 6px;margin:2px;cursor:pointer;font-weight:bold;}
+    .elements-list{max-height:160px;overflow-y:auto;}
+    .element-item{padding:7px 9px;border-radius:4px;margin-bottom:6px;background:#292017;color:#dbcd96;font-size:13px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+    .element-item.selected{background:#3a280d;color:var(--main);border-left:3px solid var(--main);}
+    .sticker-categories{display:flex;flex-direction:row;gap:6px;margin-bottom:7px;overflow-x:auto;padding-bottom:6px;}
+    .sticker-tab{border-radius:7px;background:#56441b;color:var(--main);font-weight:bold;padding:6px 10px;cursor:pointer;font-size:13px;border:2px solid transparent;display:inline-block;white-space:nowrap;}
+    .sticker-tab.active{background:var(--main);color:#20190e;border:2.2px solid #fff;}
+    /* sticker gallery vertical with 3 columns grouping */
+    .sticker-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:220px;overflow-y:auto;padding-right:6px;}
+    .sticker-gallery .color-preset{width:44px;height:44px;border-radius:8px;font-size:20px;margin-bottom:6px;display:inline-flex;justify-content:center;align-items:center;background:transparent;border:1.6px solid #2f2816;color:#fff;}
+    .lfuture-logo-gallery{display:flex;flex-wrap:wrap;gap:6px;max-height:75px;overflow-y:auto;}
+    .lfuture-logo-thumb{width:50px;height:50px;background:#fff;border-radius:8px;overflow:hidden;border:1.5px solid #b09e65;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .lfuture-logo-thumb img{max-width:96%;max-height:96%;object-fit:contain;}
+    .toast{position:fixed;bottom:28px;right:28px;z-index:1001;min-width:170px;background:#323223;color:#fee;border-radius:8px;padding:13px 17px;font-size:15px;box-shadow:0 6px 22px #000a;animation:slideUp 0.5s;border:2px solid var(--main);}
+    @keyframes slideUp{from{opacity:0;transform:translateY(35px);}to{opacity:1;transform:translateY(0);}
+    }
+    select.font-picker option {font-size:17px;}
+    .scene-active{box-shadow:0 0 0 4px #ffd70033,0 12px 44px #000a;}
+    .scene-actions{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+    .small-muted{font-size:12px;color:#c9b87a;}
+    @media(min-width:1200px){
+      .canvas-wrap{max-width:100%;padding:20px 10px;align-items:center;}
+    }
+    /* small responsive fix for sticker area to not overflow layout */
+    .aside .sideblock .sticker-gallery::-webkit-scrollbar { width:8px; }
+    .aside .sideblock .sticker-gallery::-webkit-scrollbar-thumb { background:#2a2413;border-radius:6px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+<script src="./editor-3d-core.js"></script>
+<script type="module" src="./engines/editor-3d-bootstrap.js"></script>
+  <script>
+    if (window.Editor3DCore && window.Editor3DCore.shouldBlockMobile()) {
+      window.Editor3DCore.redirectToMobileBlock();
+    }
+  </script>
+<header>
+  <span class="panel-label" style="font-size:22px;letter-spacing:2px;">L-FUTURE Editor 3D Realista — Frente / Trasera</span>
+  <div>
+    <button class="btn" onclick="saveProject()">💾 Guardar</button>
+    <button class="btn" onclick="exportBothPNG()">⬇️ Exportar (ambos)</button>
+    <button class="btn" onclick="resetCanvas()">♻️ Limpiar (escena activa)</button>
+  </div>
+</header>
+
+<aside class="aside">
+  <div class="sideblock">
+    <div class="panel-label">🎽 Prenda</div>
+    <label>Color base</label><input type="color" id="color-base">
+    <div id="color-presets" style="margin:6px 0;"></div>
+    <label>
+      Tipo:
+      <select id="shirt-type">
+        <option value="tshirt">Franela</option>
+        <option value="sweater">Suéter</option>
+        <option value="polo">Polo</option>
+      </select>
+    </label>
+    <div style="margin-top:8px;">
+      <label style="font-weight:bold;color:#ffc72b;"><input type="checkbox" id="apply-to-both" checked> Aplicar color a ambas escenas</label>
+    </div>
+    <div class="small-muted" style="margin-top:8px;">Haz clic en la escena (arriba/abajo) para activarla. Los controles se aplican a la escena activa. Interacciones de arrastre/escala/rotación sólo mediante touch en el editor.</div>
+  </div>
+
+  <div class="sideblock">
+    <div class="panel-label">🏆 Logos L-Future</div>
+    <div class="lfuture-logo-gallery" id="lfuture-logo-gallery"></div>
+  </div>
+
+  <div class="sideblock">
+    <div class="panel-label">✏️ Texto</div>
+    <textarea id="text-input" rows="2" placeholder="Escribe texto aquí..."></textarea>
+    <label style="margin-top:5px;font-weight:bold;color:#ffc72b;">Categoría:</label>
+    <select id="font-category-select" style="width:100%;padding:5px 6px;margin-bottom:7px;border-radius:7px;font-size:15px;"></select>
+    <label style="font-weight:bold;color:#ffc72b;">Tipografía:</label>
+    <select id="font-list-select" style="width:100%;padding:5px 6px;margin-bottom:7px;border-radius:7px;font-size:15px;"></select>
+    <label>Tamaño:<input type="number" id="text-size" min="8" max="120" value="38"></label>
+    <label>Color: <input type="color" id="text-color" value="#161410"></label>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn" id="add-text-btn">➕ Añadir texto</button>
+      <button class="btn" id="add-text-to-both" title="Añadir texto a ambas escenas" style="background:#a08b25;">➕ Ambas</button>
+    </div>
+  </div>
+
+  <div class="sideblock">
+    <div class="panel-label">⭐ Stickers</div>
+    <div class="sticker-categories" id="sticker-categories"></div>
+    <div class="sticker-gallery" id="sticker-gallery"></div>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button class="btn" onclick="addStickerToBoth()">➕ Stickers a ambas</button>
+    </div>
+  </div>
+
+  <div class="sideblock">
+    <div class="panel-label">🖼️ Imágenes</div>
+    <input type="file" id="image-upload" accept="image/*">
+    <div id="image-gallery" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:7px;"></div>
+    <div style="margin-top:8px;" class="small-muted">Añade imágenes y elígelas para la escena activa.</div>
+  </div>
+</aside>
+
+<main class="canvas-wrap">
+  <div id="scene-front" class="scene-box scene-active" data-scene="0" onclick="setActiveScene(0)">
+    <div class="scene-title"><span>🟡 Frente (arriba)</span><div style="flex:1"></div><div class="scene-actions"><button class="btn-small btn" title="Activar frente" onclick="setActiveScene(0);event.stopPropagation();">F</button></div></div>
+    <canvas id="editor-canvas-front" width="520" height="420"></canvas>
+    <div id="handle-scale-front" class="element-handle"></div>
+    <div id="handle-rotate-front" class="element-handle"></div>
+    <div id="handle-mini-front" class="mini-handle"><button title="Agrandar" onclick="scaleSelectedUp();event.stopPropagation();">＋</button><button title="Reducir" onclick="scaleSelectedDown();event.stopPropagation();">－</button></div>
+  </div>
+
+  <div id="scene-back" class="scene-box" data-scene="1" onclick="setActiveScene(1)">
+    <div class="scene-title"><span>🔵 Trasera (abajo)</span><div style="flex:1"></div><div class="scene-actions"><button class="btn-small btn" title="Activar trasera" onclick="setActiveScene(1);event.stopPropagation();">B</button></div></div>
+    <canvas id="editor-canvas-back" width="520" height="420"></canvas>
+    <div id="handle-scale-back" class="element-handle"></div>
+    <div id="handle-rotate-back" class="element-handle"></div>
+    <div id="handle-mini-back" class="mini-handle"><button title="Agrandar" onclick="scaleSelectedUp();event.stopPropagation();">＋</button><button title="Reducir" onclick="scaleSelectedDown();event.stopPropagation();">－</button></div>
+  </div>
+</main>
+
+<aside class="aside-right">
+  <div class="sideblock">
+    <div class="panel-label">📋 Elementos — <span id="active-scene-label">Frente</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button class="btn" onclick="setActiveScene(0)">Frente</button>
+      <button class="btn" onclick="setActiveScene(1)">Trasera</button>
+      <button class="btn" onclick="duplicateToOther()">📑 Duplicar a otra</button>
+    </div>
+    <div class="elements-list" id="elements-list"></div>
+  </div>
+
+  <div class="sideblock" id="properties-panel" style="display:none;">
+    <div class="panel-label">⚙️ Propiedades</div>
+    <label>X:<input id="prop-x" type="number" step="1"></label>
+    <label>Y:<input id="prop-y" type="number" step="1"></label>
+    <label>Escala:<input id="prop-scale" type="number" min="20" max="400"></label>
+    <label>Rotación:<input id="prop-rotate" type="number" min="0" max="360"></label>
+    <label>Opacidad:<input id="prop-opacity" type="number" min="10" max="100"></label>
+    <label>Tipografía para texto:
+      <select id="prop-font" class="font-picker">
+        <option value="Arial" style="font-family:Arial;">Arial</option>
+        <option value="Montserrat" style="font-family:Montserrat,sans-serif;">Montserrat</option>
+        <option value="Lora" style="font-family:Lora,serif;">Lora</option>
+        <option value="Roboto" style="font-family:Roboto,sans-serif;">Roboto</option>
+        <option value="Oswald" style="font-family:Oswald,sans-serif;">Oswald</option>
+        <option value="Orbitron" style="font-family:Orbitron,sans-serif;">Orbitron</option>
+        <option value="Pacifico" style="font-family:Pacifico,cursive;">Pacifico</option>
+        <option value="Press Start 2P" style="font-family:'Press Start 2P',cursive;">Press Start 2P</option>
+        <option value="Poiret One" style="font-family:'Poiret One',cursive;">Poiret One</option>
+        <option value="Russo One" style="font-family:'Russo One',sans-serif;">Russo One</option>
+        <option value="Playfair Display" style="font-family:'Playfair Display',serif;">Playfair Display</option>
+        <option value="Yellowtail" style="font-family:Yellowtail,cursive;">Yellowtail</option>
+        <option value="Quicksand" style="font-family:Quicksand,sans-serif;">Quicksand</option>
+        <option value="Major Mono Display" style="font-family:'Major Mono Display',monospace;">Major Mono Display</option>
+        <option value="Permanent Marker" style="font-family:'Permanent Marker',cursive;">Permanent Marker</option>
+        <option value="Fira Mono" style="font-family:'Fira Mono',monospace;">Fira Mono</option>
+        <option value="Anton" style="font-family:Anton,sans-serif;">Anton</option>
+        <option value="Space Mono" style="font-family:'Space Mono',monospace;">Space Mono</option>
+        <option value="Alfa Slab One" style="font-family:'Alfa Slab One',serif;">Alfa Slab One</option>
+        <option value="Tilt Neon" style="font-family:'Tilt Neon',sans-serif;">Tilt Neon</option>
+        <option value="Saira Extra Condensed" style="font-family:'Saira Extra Condensed',sans-serif;">Saira Extra Condensed</option>
+      </select>
+    </label>
+    <label>Alineación:<select id="prop-align"><option>center</option><option>left</option><option>right</option></select></label>
+    <button class="btn" onclick="deleteCurrent()" style="background:#ba3535;color:#fff;margin-top:10px;">🗑️ Eliminar</button>
+  </div>
+</aside>
+
+</div>
+
+<div id="toast" style="display:none;"></div>
+
+<script>
+/* 
+  Actualizaciones principales implementadas:
+  - Stickers: categorías horizontales + emojis agrupados en 3 columnas (3 en 3).
+  - Nueva mini-herramienta (＋ / －) que aparece en la esquina del objeto seleccionado para agrandar/reducir con pasos suaves.
+  - Sensibilidad de escala/rotación mejorada y suavizada (pinch y handles).
+  - Escena trasera: redibujado con cuello ausente, mangas ligeramente más largas y bordes marcados.
+  - Frente: se implementó una opción visual de escote en V más caído (si view==='front').
+*/
+
+/* ---------- Constantes y datos ---------- */
+const FONT_CATEGORIES = [
+  {cat: "Elegante", fonts: [
+    {name:"Playfair Display", gFont:"Playfair Display", demo:"Esencia elegante", style:"font-family:'Playfair Display',serif;"},
+    {name:"Lora", gFont:"Lora", demo:"Lora clásica", style:"font-family:Lora,serif;"},
+    {name:"Poiret One", gFont:"Poiret One", demo:"Diseño ligero", style:"font-family:'Poiret One',cursive;"},
+    {name:"Yellowtail", gFont:"Yellowtail", demo:"Script bello", style:"font-family:Yellowtail,cursive;font-size:18px;"},
+    {name:"Quicksand", gFont:"Quicksand", demo:"Moderno suave", style:"font-family:Quicksand,sans-serif;letter-spacing:1.3px;"}
+  ]},
+  {cat: "Futurista", fonts: [
+    {name:"Orbitron", gFont:"Orbitron", demo:"CYBER STYLE", style:"font-family:Orbitron,sans-serif;"},
+    {name:"Russo One", gFont:"Russo One", demo:"Robótico", style:"font-family:'Russo One',sans-serif;"},
+    {name:"Tilt Neon", gFont:"Tilt Neon", demo:"Retro tech", style:"font-family:'Tilt Neon',sans-serif;text-shadow:0 0 11px #3f6;"},
+    {name:"Saira Extra Condensed", gFont:"Saira Extra Condensed", demo:"Ultra compacto", style:"font-family:'Saira Extra Condensed',sans-serif;letter-spacing:1.2px;"}
+  ]},
+  {cat: "3D Impacto", fonts: [
+    {name:"Anton", gFont:"Anton", demo:"Poderoso 3D", style:"font-family:Anton,sans-serif;font-weight:bold;text-shadow:2px 2px 0 #fff3,4px 4px 7px #000b;"},
+    {name:"Alfa Slab One", gFont:"Alfa Slab One", demo:"Robusto", style:"font-family:'Alfa Slab One',serif;text-shadow:2px 2px 0 #ffc13f99;"},
+    {name:"Bebas Neue", gFont:"Bebas Neue", demo:"Social block", style:"font-family:'Bebas Neue',sans-serif;letter-spacing:1.6px;text-transform:uppercase;"}
+  ]},
+  {cat: "Negrita", fonts: [
+    {name:"Montserrat", gFont:"Montserrat", demo:"Tipo negrita", style:"font-family:Montserrat,sans-serif;font-weight:bold;"},
+    {name:"Oswald", gFont:"Oswald", demo:"Práctico", style:"font-family:Oswald,sans-serif;font-weight:bold;letter-spacing:1px;"},
+    {name:"Roboto", gFont:"Roboto", demo:"Versátil", style:"font-family:Roboto,sans-serif;font-weight:bold;"}
+  ]},
+  {cat: "Manuscrita", fonts: [
+    {name:"Pacifico", gFont:"Pacifico", demo:"Mano suave", style:"font-family:Pacifico,cursive;"},
+    {name:"Permanent Marker",gFont:"Permanent Marker",demo:"Rápido & Cool", style:"font-family:'Permanent Marker',cursive;"}
+  ]},
+  {cat: "Pixel/Retro", fonts: [
+    {name:"Press Start 2P", gFont:"Press Start 2P", demo:"Pixel icon", style:"font-family:'Press Start 2P',cursive;font-size:13px;"},
+    {name:"Fira Mono", gFont:"Fira Mono", demo:"Coding !", style:"font-family:Fira Mono,monospace;"}
+  ]},
+  {cat: "Mono/Espaciada", fonts: [
+    {name:"Major Mono Display", gFont:"Major Mono Display", demo:"Mono display", style:"font-family:'Major Mono Display',monospace;letter-spacing:2.3px;"},
+    {name:"Space Mono", gFont:"Space Mono", demo:"Espaciado", style:"font-family:'Space Mono',monospace;"}
+  ]},
+  {cat: "Divertida", fonts: [
+    {name:"Comic Sans MS", gFont:"Comic Sans MS",demo:"¡Divertido!",style:"font-family:'Comic Sans MS',cursive;font-size:15px;"},
+    {name:"Pacifico", gFont:"Pacifico",demo:"Fiesta",style:"font-family:Pacifico,cursive;font-size:17px;"}
+  ]},
+  {cat: "Serif clásica", fonts: [
+    {name:"Georgia", gFont:"Georgia", demo:"Tradición", style:"font-family:Georgia,serif;"},
+    {name:"Times New Roman", gFont:"Times New Roman",demo:"Periodismo",style:"font-family:'Times New Roman',serif;"}
+  ]},
+  {cat: "Sans simple", fonts: [
+    {name:"Arial", gFont:"Arial",demo:"Limpio",style:"font-family:Arial,sans-serif;"},
+    {name:"Roboto", gFont:"Roboto",demo:"Sencillo",style:"font-family:Roboto,sans-serif;"},
+    {name:"Montserrat", gFont:"Montserrat",demo:"Actual",style:"font-family:Montserrat,sans-serif;"}
+  ]}
+];
+
+const LFUTURE_LOGOS = [
+  "logo l-future.jpg","720b17bcff442667a24db38d5f75596e.jpg","d910002f89fa8f13930afb934beb91fd.jpg","07809e77bfc551da087094f5158ac616.jpg"
+];
+const COLORS = ["#FFFFFF","#000000","#ffd700","#ff5454","#3737ff","#60ff87","#00ffff","#ffa500","#afe7ff","#bcf1c9"];
+const STICKER_CATEGORIES = {
+  "Emojis": ["😀","😄","🤩","😂","😎","😍","🥰","😭","😡","😱","🙌","👍"],
+  "Deportes": ["⚽️","🏀","🏈","🥎","🎾","🏐","🏓","🏸","🥊","🏆"],
+  "Corazones": ["❤️","🧡","💛","💚","💙","💜","🩷","🖤","💔","❣️","💕","💞"],
+  "Comida": ["🍕","🍔","🍟","🥑","🍣","🍩","🍉","🍨","🍫","🍇"],
+  "Países": ["🇻🇪","🇦🇷","🇲🇽","🇧🇷","🇺🇸","🇪🇸","🇨🇴","🇨🇱","🇫🇷","🇯🇵"],
+  "Tecnología": ["💻","🖥️","📱","⌨️","🖱️","🔌","🎧","🎮"],
+  "Animales": ["🐱","🐶","🦊","🐼","🦁","🐰","🦓","🐸","🦜","🐙"],
+};
+
+/* ---------- Scenes ---------- */
+const scenes = [
+  { name:'Frente', canvasId:'editor-canvas-front', handleScaleId:'handle-scale-front', handleRotateId:'handle-rotate-front', handleMiniId:'handle-mini-front',
+    state:{ elementos:[], imglist:[], selected:null, shirt:{color:"#FFFFFF",type:"tshirt",view:"front"}, zoom:1, historial:[], historialRedo:[], arrastrando:false, dragX:0, dragY:0, scaleDragging:false, rotateDragging:false, dragInit:{}, stickerCategoria:"Emojis", dragPointerType:null} },
+  { name:'Trasera', canvasId:'editor-canvas-back', handleScaleId:'handle-scale-back', handleRotateId:'handle-rotate-back', handleMiniId:'handle-mini-back',
+    state:{ elementos:[], imglist:[], selected:null, shirt:{color:"#FFFFFF",type:"tshirt",view:"back"}, zoom:1, historial:[], historialRedo:[], arrastrando:false, dragX:0, dragY:0, scaleDragging:false, rotateDragging:false, dragInit:{}, stickerCategoria:"Emojis", dragPointerType:null} }
+];
+
+let currentSceneIndex = 0;
+let canvases = [], ctxs = [], handles = [];
+// When true, selection highlight is suppressed (used during export)
+window.suppressSelection = false;
+
+// Switch active scene (front/back)
+function setActiveScene(idx){
+  if(typeof idx !== 'number' || idx < 0 || idx >= scenes.length) return;
+  currentSceneIndex = idx;
+  // update scene boxes
+  document.querySelectorAll('.scene-box').forEach((el,i)=>{
+    if(i===idx) el.classList.add('scene-active'); else el.classList.remove('scene-active');
+  });
+  // update label
+  const label = document.getElementById('active-scene-label');
+  if(label) label.textContent = scenes[idx].name || ('Escena '+(idx+1));
+  renderAll();
+}
+
+/* ---------- Helpers UI ---------- */
+function renderFontCatDropdown(){ let sel=document.getElementById('font-category-select'); sel.innerHTML=FONT_CATEGORIES.map((c,i)=>`<option value="${i}">${c.cat}</option>`).join(''); }
+function renderFontListDropdown(idx){ let sel=document.getElementById('font-list-select'); let fontList=FONT_CATEGORIES[idx].fonts; sel.innerHTML=fontList.map((f,i)=>`<option value="${i}" style="${f.style}">${f.demo} (${f.name})</option>`).join(''); updateFontPreviewInput(); }
+function getCurrentFontName(){ let fc=parseInt(document.getElementById('font-category-select').value,10); let ff=parseInt(document.getElementById('font-list-select').value,10); return FONT_CATEGORIES[fc].fonts[ff].name; }
+function updateFontPreviewInput(){ let fc=parseInt(document.getElementById('font-category-select').value,10); let ff=parseInt(document.getElementById('font-list-select').value,10); let font=FONT_CATEGORIES[fc].fonts[ff]; document.getElementById('text-input').style = font.style + ";border:2px solid #fff2;border-radius:7px;margin-bottom:6px;transition:.17s;font-size:18px;"; }
+
+/* ---------- Init ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  scenes.forEach((sc,i)=>{
+    const c = document.getElementById(sc.canvasId);
+    canvases[i]=c; ctxs[i]=c.getContext('2d');
+    handles[i] = { scale: document.getElementById(sc.handleScaleId), rotate: document.getElementById(sc.handleRotateId), mini: document.getElementById(sc.handleMiniId) };
+    attachCanvasEvents(i);
+  });
+
+  renderFontCatDropdown(); renderFontListDropdown(0);
+  document.getElementById('font-category-select').addEventListener('change', function(){ renderFontListDropdown(parseInt(this.value,10)); });
+  document.getElementById('font-list-select').addEventListener('change', updateFontPreviewInput);
+
+  let cp=document.getElementById('color-presets');
+  cp.innerHTML = COLORS.map(c=>`<span class="color-preset small" style="background:${c}" onclick="setShirtColor('${c}')" title="${c}"></span>`).join('');
+  document.getElementById('color-base').value = currentScene().state.shirt.color;
+  document.getElementById('color-base').oninput = e => setShirtColor(e.target.value);
+  document.getElementById('shirt-type').oninput = e => setShirtType(e.target.value);
+
+  document.getElementById('add-text-btn').onclick = () => addTextToActive();
+
+  // If opened with local_index param, load project from localStorage mis_proyectos_lf23
+  try{
+    const params = new URLSearchParams(location.search);
+    if(params.has('local_index')){
+      const idx = parseInt(params.get('local_index'),10);
+      const raw = localStorage.getItem('mis_proyectos_lf23');
+      if(raw){
+        const arr = JSON.parse(raw || '[]');
+        const item = arr[idx];
+        if(item && item.escenas){
+          // Apply to scenes
+          item.escenas.forEach((es, i)=>{
+            if(!scenes[i]) return;
+            // shallow copy into state
+            scenes[i].state.elementos = es.elementos || [];
+            scenes[i].state.imglist = es.imglist || [];
+            scenes[i].state.shirt = es.shirt || scenes[i].state.shirt;
+            scenes[i].state.selected = null;
+            scenes[i].state.historial = [JSON.stringify(es.elementos || [])];
+            scenes[i].state.historialRedo = [];
+          });
+          renderAll();
+          toast('Proyecto local cargado en el editor','success');
+        }
+      }
+    }
+  }catch(e){ console.warn('No se pudo cargar proyecto local desde query', e); }
+  document.getElementById('add-text-to-both').onclick = () => addTextToBoth();
+  document.getElementById('image-upload').onchange = handleImageUpload;
+  ["prop-x","prop-y","prop-scale","prop-rotate","prop-opacity","prop-align","prop-font"].forEach(id=>{ document.getElementById(id).oninput = changePropsFromPanel; });
+
+  renderLFutureLogoGallery(); renderStickerCategories(); renderStickers();
+  scenes.forEach((_,i)=> saveHistory(i));
+  renderAll();
+});
+
+/* ---------- Scene utils ---------- */
+function scene(i){ return scenes[i]; }
+function currentScene(){ return scenes[currentSceneIndex]; }
+function setActiveScene(i){
+  currentSceneIndex = i;
+  document.getElementById('scene-front').classList.toggle('scene-active', i===0);
+  document.getElementById('scene-back').classList.toggle('scene-active', i===1);
+  document.getElementById('active-scene-label').textContent = scenes[i].name;
+  document.getElementById('color-base').value = currentScene().state.shirt.color;
+  document.getElementById('shirt-type').value = currentScene().state.shirt.type;
+  renderImgs(); updateList(); updatePropPanel(); renderAll();
+}
+function duplicateToOther(){
+  const from = currentSceneIndex, to = 1 - currentSceneIndex;
+  scenes[to].state.elementos = JSON.parse(JSON.stringify(scenes[from].state.elementos||[]));
+  scenes[to].state.imglist = JSON.parse(JSON.stringify(scenes[from].state.imglist||[]));
+  saveHistory(to); renderAll(); toast('Duplicado a la otra escena','success');
+}
+
+/* ---------- Logos / stickers / images ---------- */
+function renderLFutureLogoGallery(){ let gal=document.getElementById('lfuture-logo-gallery'); gal.innerHTML = LFUTURE_LOGOS.map((src,i)=>`<span class="lfuture-logo-thumb" title="Añadir logo" onclick="addLFutureLogo(${i})"><img src="${src}" alt="Logo ${i+1}"></span>`).join(''); }
+function addLFutureLogo(i){ let id=Date.now()+Math.floor(Math.random()*10000); const sc=currentScene(); sc.state.imglist.push({id,url:LFUTURE_LOGOS[i]}); sc.state.elementos.push({tipo:'img',image_id:id,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
+function renderStickerCategories(){ let container=document.getElementById('sticker-categories'); container.innerHTML = Object.keys(STICKER_CATEGORIES).map(cat=>`<span class="sticker-tab${cat===currentScene().state.stickerCategoria?' active':''}" onclick="selectStickerCategory('${cat}')">${cat}</span>`).join(''); }
+function selectStickerCategory(cat){ currentScene().state.stickerCategoria = cat; renderStickerCategories(); renderStickers(); }
+function renderStickers(){ let gallery=document.getElementById('sticker-gallery'); let catList=STICKER_CATEGORIES[currentScene().state.stickerCategoria]||[]; /* group displayed as grid 3x */ gallery.innerHTML = catList.map((emoji,i)=>`<div style="display:flex;align-items:center;justify-content:center;"><span class="color-preset" onclick="addSticker('${emoji}')" title="Añadir sticker">${emoji}</span></div>`).join(''); }
+function addSticker(em){ const sc=currentScene(); sc.state.elementos.push({tipo:'logo',contenido:em,tamano:52,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
+function addStickerToBoth(){ const txt="⭐"; scenes.forEach((scObj,idx)=>{ scObj.state.elementos.push({tipo:'logo',contenido:txt,tamano:52,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(idx); }); renderAll(); }
+function handleImageUpload(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=function(ev){ let id=Date.now()+Math.floor(Math.random()*10000); const sc=currentScene(); sc.state.imglist.push({id,url:ev.target.result}); sc.state.elementos.push({tipo:'img',image_id:id,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }; reader.readAsDataURL(file); }
+function renderImgs(){ let g=document.getElementById('image-gallery'); if(!g) return; const sc=currentScene(); g.innerHTML = sc.state.imglist.map((img,i)=>`<span class="color-preset small" onclick="addImgToCanvas(${i})" style="background:#ccc url('${img.url}') center/cover no-repeat"></span>`).join(''); }
+function addImgToCanvas(i){ const sc=currentScene(); let im=sc.state.imglist[i]; sc.state.elementos.push({tipo:'img',image_id:im.id,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
+
+/* ---------- Text helpers ---------- */
+function addTextToActive(){ const txtarea=document.getElementById('text-input'); const txt=txtarea.value.trim(); if(!txt) return toast("Texto vacío","info"); const fuente=getCurrentFontName(); const sc=currentScene(); let el={ tipo:'texto', contenido:txt, tamano:parseInt(document.getElementById('text-size').value)||38, fuente:fuente, color:document.getElementById('text-color').value, x:0, y:0, rotacion:0, opacidad:100, escala:1, alineacion:'center' }; sc.state.elementos.push(el); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
+function addTextToBoth(){ const txtarea=document.getElementById('text-input'); const txt=txtarea.value.trim(); if(!txt) return toast("Texto vacío","info"); const fuente=getCurrentFontName(); scenes.forEach((scObj,idx)=>{ let el={ tipo:'texto', contenido:txt, tamano:parseInt(document.getElementById('text-size').value)||38, fuente:fuente, color:document.getElementById('text-color').value, x:0, y:0, rotacion:0, opacidad:100, escala:1, alineacion:'center' }; scObj.state.elementos.push(el); saveHistory(idx); }); renderAll(); }
+
+/* ---------- Elements list / props ---------- */
+function updateList(){ let lst=document.getElementById('elements-list'); const sc=currentScene(); lst.innerHTML = sc.state.elementos.map((el,i)=>`<div class="element-item${i===sc.state.selected?' selected':''}" onclick="selectElementByIndex(${i})">${(el.tipo==="texto"?"📝":el.tipo==="logo"?"⭐":"🖼️")}<span>${(el.contenido||'Img').toString().substring(0,28)}</span></div>`).join(''); }
+function selectElementByIndex(i){ const sc=currentScene(); selectElement(sc,i); renderAll(); }
+function selectElement(scObj,i){ scObj.state.selected = i; updatePropPanel(); renderAll(); positionMiniHandleForScene(currentSceneIndex); }
+function deleteCurrent(){ const sc=currentScene(); if(sc.state.selected!=null){ sc.state.elementos.splice(sc.state.selected,1); sc.state.selected=null; saveHistory(currentSceneIndex); renderAll(); } }
+function updatePropPanel(){ let p=document.getElementById('properties-panel'); const sc=currentScene(); if(sc.state.selected==null){ p.style.display='none'; return; } p.style.display='block'; let el=sc.state.elementos[sc.state.selected]; document.getElementById('prop-x').value=Math.round(el.x||0); document.getElementById('prop-y').value=Math.round(el.y||0); document.getElementById('prop-scale').value=Math.round((el.escala||1)*100); document.getElementById('prop-rotate').value=Math.round(el.rotacion||0); document.getElementById('prop-opacity').value=Math.round(el.opacidad||100); document.getElementById('prop-align').value=el.alineacion||'center'; let pf=document.getElementById('prop-font'); pf.disabled = el.tipo !== "texto"; pf.value = el.fuente || "Arial"; }
+function changePropsFromPanel(){ const sc=currentScene(); if(sc.state.selected==null) return; let el=sc.state.elementos[sc.state.selected]; el.x=parseInt(document.getElementById('prop-x').value)||0; el.y=parseInt(document.getElementById('prop-y').value)||0; el.escala=(parseInt(document.getElementById('prop-scale').value)||100)/100; el.rotacion=parseInt(document.getElementById('prop-rotate').value)||0; el.opacidad=parseInt(document.getElementById('prop-opacity').value)||100; el.alineacion=document.getElementById('prop-align').value||'center'; if(el.tipo==="texto") el.fuente=document.getElementById('prop-font').value; saveHistory(currentSceneIndex); renderAll(); }
+
+/* ---------- Rendering orchestration ---------- */
+function renderAll(){ scenes.forEach((scObj,idx)=> renderScene(idx)); updateList(); updatePropPanel(); }
+function renderScene(idx){ const scObj=scenes[idx]; const c=canvases[idx]; const ctx=ctxs[idx]; ctx.clearRect(0,0,c.width,c.height); drawShirtRealista(ctx,c,scObj.state); drawElements(ctx,c,scObj.state, idx); drawHandlesForScene(idx); }
+
+/* ---------- Improved shirt drawing (front/back) ---------- */
+function drawShirtRealista(ctx, canvas, stateObj){
+  ctx.save();
+  // layout relative to canvas size
+  let W = canvas.width * 0.66;
+  let H = canvas.height * 0.72;
+  let cx = canvas.width / 2;
+  let cy = canvas.height / 2 + 28;
+  let x = cx - W/2;
+  let y = cy - H/2;
+  let color = stateObj.shirt.color;
+  let tipo = stateObj.shirt.type;
+  let view = stateObj.shirt.view; // 'front' or 'back'
+
+  // soft shadow under t-shirt to lift
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = "#000";
+  roundEllipseFill(ctx, cx, y + H*0.98, W*0.46, H*0.095);
+  ctx.restore();
+
+  // Modify shoulder/sleeve shape for front/back differences.
+  ctx.save();
+  ctx.beginPath();
+  // left shoulder -> left sleeve outer
+  // extend sleeves a bit more for both views, but different roll for front/back
+  let sleeveExtra = (view==='back') ? 0.14 : 0.06; // back sleeves longer
+  ctx.moveTo(x + W*0.10, y + H*0.08);
+  ctx.quadraticCurveTo(x + W*0.03, y + H*0.08, x - W*0.08, y + H*(0.18 + sleeveExtra));
+  ctx.quadraticCurveTo(x - W*0.02, y + H*0.26, x + W*0.06, y + H*0.40);
+
+  // left torso side down to hem
+  ctx.lineTo(x + W*0.06, y + H*0.78);
+
+  // bottom hem curve
+  ctx.quadraticCurveTo(cx, y + H*0.95, x + W*0.94, y + H*0.78);
+
+  // right torso up
+  ctx.lineTo(x + W*0.94, y + H*0.40);
+
+  // right sleeve outer -> shoulder
+  ctx.quadraticCurveTo(x + W + W*0.04, y + H*(0.26 + sleeveExtra), x + W + W*0.06, y + H*(0.18 + sleeveExtra));
+  ctx.quadraticCurveTo(x + W*0.97, y + H*0.08, x + W*0.90, y + H*0.08);
+
+  // top neckline curve closing - will be masked later for V-neck or back-neck cut
+  ctx.quadraticCurveTo(cx, y - H*0.02, x + W*0.10, y + H*0.08);
+  ctx.closePath();
+
+  // fill main
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // stronger outline for edges
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = shadeColor(color, -28) + "cc";
+  ctx.stroke();
+  ctx.restore();
+
+  // sleeves inner fold and rolled hem (more visible)
+  ctx.save();
+  ctx.fillStyle = shadeColor(color, 6);
+  // left inner
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.06, y + H*0.40);
+  ctx.quadraticCurveTo(x - W*0.02, y + H*0.44, x - W*0.02, y + H*(0.30 + sleeveExtra*0.5));
+  ctx.quadraticCurveTo(x + W*0.02, y + H*0.22, x + W*0.12, y + H*0.26);
+  ctx.closePath();
+  ctx.globalAlpha = 0.13;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // right inner
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.94, y + H*0.40);
+  ctx.quadraticCurveTo(x + W + W*0.02, y + H*0.44, x + W + W*0.02, y + H*(0.30 + sleeveExtra*0.5));
+  ctx.quadraticCurveTo(x + W*0.98, y + H*0.22, x + W*0.88, y + H*0.26);
+  ctx.closePath();
+  ctx.globalAlpha = 0.13;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // neckline: front V more dropped, back - removed / smoothed
+  ctx.save();
+  if(view === 'front'){
+    // V-neck dropped
+    let vDepth = H * 0.09; // deeper V
+    let vWidth = W * 0.18;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.moveTo(cx - vWidth, y + H*0.06);
+    ctx.lineTo(cx, y + H*0.06 + vDepth);
+    ctx.lineTo(cx + vWidth, y + H*0.06);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Add ribbed narrow border around V
+    ctx.beginPath();
+    ctx.moveTo(cx - vWidth - 6, y + H*0.06);
+    ctx.lineTo(cx, y + H*0.06 + vDepth + 6);
+    ctx.lineTo(cx + vWidth + 6, y + H*0.06);
+    ctx.strokeStyle = shadeColor(color, -10);
+    ctx.lineWidth = 6;
+    ctx.globalAlpha = 0.65;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  } else {
+    // back view: remove collar ring -> make a subtle cutout to simulate no-collar/back-neck
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.ellipse(cx, y + H*0.07 + 6, W * 0.5, 10, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    // subtle stitched rim at top-back
+    ctx.beginPath();
+    ctx.ellipse(cx, y + H*0.07 + 10, W * 0.45, 6, 0, 0, Math.PI);
+    ctx.strokeStyle = "#ffffff22";
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.15;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  // subtle fabric folds and shading lines for realism
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = shadeColor(color, -12);
+  ctx.lineWidth = 1.2;
+  // left subtle crease
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.24, y + H*0.22);
+  ctx.bezierCurveTo(x + W*0.18, y + H*0.40, x + W*0.22, y + H*0.60, x + W*0.28, y + H*0.82);
+  ctx.stroke();
+  // right subtle crease
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.76, y + H*0.22);
+  ctx.bezierCurveTo(x + W*0.82, y + H*0.40, x + W*0.78, y + H*0.60, x + W*0.72, y + H*0.82);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // bottom hem - stronger and visible (marked edge)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.08, y + H*0.78);
+  ctx.quadraticCurveTo(cx, y + H*0.92, x + W*0.92, y + H*0.78);
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = shadeColor(color, -12);
+  ctx.globalAlpha = 0.95;
+  ctx.stroke();
+  // hem highlight
+  ctx.globalAlpha = 0.14;
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.10, y + H*0.77);
+  ctx.quadraticCurveTo(cx, y + H*0.89, x + W*0.90, y + H*0.77);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // stitches & shoulder seam lines (front/back differences)
+  ctx.save();
+  ctx.strokeStyle = shadeColor(color, -24);
+  ctx.lineWidth = 0.9;
+  ctx.globalAlpha = 0.22;
+  // shoulder/top seams
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.12, y + H*0.10);
+  ctx.quadraticCurveTo(cx, y + H*0.02, x + W*0.88, y + H*0.10);
+  ctx.stroke();
+
+  // small sewn line near sleeve ends (more visible for longer sleeves)
+  ctx.beginPath();
+  ctx.moveTo(x + W*0.00, y + H*(0.20 + sleeveExtra*0.9));
+  ctx.quadraticCurveTo(x + W*0.06, y + H*(0.28 + sleeveExtra*0.8), x + W*0.12, y + H*(0.26 + sleeveExtra*0.6));
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + W*1.00, y + H*(0.20 + sleeveExtra*0.9));
+  ctx.quadraticCurveTo(x + W*0.94, y + H*(0.28 + sleeveExtra*0.8), x + W*0.88, y + H*(0.26 + sleeveExtra*0.6));
+  ctx.stroke();
+
+  // back center seam impression if back view
+  if(view === 'back'){
+    ctx.beginPath();
+    ctx.moveTo(cx, y + H*0.22);
+    ctx.lineTo(cx, y + H*0.72);
+    ctx.strokeStyle = shadeColor(color, -18);
+    ctx.lineWidth = 0.6;
+    ctx.globalAlpha = 0.12;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+  ctx.restore();
+}
+
+/* ---------- drawElements - optimized + smoothing ---------- */
+function drawElements(ctx, canvas, stateObj, sceneIndex){
+  stateObj.elementos.forEach((el,i)=>{
+    ctx.save();
+    // center-based drawing
+    ctx.translate(canvas.width/2, canvas.height/2);
+    // apply position with small smoothing on render to avoid jitter (visual only)
+    let sx = el.x || 0, sy = el.y || 0;
+    ctx.translate(sx, sy);
+    let sc = el.escala||1;
+    ctx.scale(sc, sc);
+    ctx.rotate(((el.rotacion||0) * Math.PI/180) || 0);
+    ctx.globalAlpha = (el.opacidad||100)/100;
+    let fontFamily = el.fuente || "Arial";
+    if(el.tipo==="texto"){
+      ctx.font = `bold ${el.tamano||38}px "${fontFamily}",Arial,sans-serif`;
+      ctx.textAlign = el.alineacion||'center';
+      ctx.fillStyle = el.color||"#0b0b0c";
+      ctx.fillText(el.contenido, 0, 0);
+    } else if(el.tipo==="logo"){
+      ctx.font = `${el.tamano||43}px Arial`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#c2ae74";
+      ctx.fillText(el.contenido, 0, 0);
+    } else if(el.tipo==="img"){
+      let img = stateObj.imglist.find(im=>im.id===el.image_id);
+      if(img){
+        let im = new Image();
+        im.src = img.url;
+        if(!im.complete){
+          im.onload = function(){ renderAll(); };
+        }
+        // allow custom bounding box by escala
+        let size = 110;
+        ctx.drawImage(im, -size/2, -size/2, size, size);
+      }
+    }
+    if(i === stateObj.selected && !window.suppressSelection){
+      // selection visual: subtle glowing border
+      ctx.save();
+      ctx.strokeStyle = "#ffd700cc";
+      ctx.lineWidth = 4;
+      let box = 124;
+      ctx.strokeRect(-box/2,-box/2,box,box);
+      ctx.restore();
+    }
+    ctx.restore();
+  });
+}
+
+/* ---------- Handles positioning inside scene box (including mini-handle) ---------- */
+function drawHandlesForScene(idx){
+  const scObj = scenes[idx];
+  const c = canvases[idx];
+  const s = scObj.state;
+  const h = handles[idx];
+  h.scale.style.display = h.rotate.style.display = "none";
+  h.mini.style.display = "none";
+  if(s.selected == null) return;
+  let el = s.elementos[s.selected];
+  let cx = c.width/2, cy = c.height/2;
+  let angle = (el.rotacion||0) * (Math.PI/180);
+  let sc = el.escala||1;
+  let dist = 82 * sc;
+  // compute positions for scale and rotate handles (based on element transform)
+  let sx = cx + (el.x||0) + Math.cos(angle)*dist - Math.sin(angle)*dist;
+  let sy = cy + (el.y||0) + Math.sin(angle)*dist + Math.cos(angle)*dist;
+  let rx = cx + (el.x||0) - Math.cos(angle)*dist + Math.sin(angle)*dist;
+  let ry = cy + (el.y||0) - Math.sin(angle)*dist - Math.cos(angle)*dist;
+
+  // Position relative to scene-box container
+  const canvasRect = c.getBoundingClientRect();
+  const parentRect = c.parentElement.getBoundingClientRect();
+
+  // convert canvas coords to parent coordinates
+  const canvasLeft = canvasRect.left - parentRect.left + c.parentElement.offsetLeft;
+  const canvasTop  = canvasRect.top  - parentRect.top  + c.parentElement.offsetTop;
+
+  const leftScale = (sx - c.width/2) + canvasLeft;
+  const topScale  = (sy - c.height/2) + canvasTop;
+  const leftRotate = (rx - c.width/2) + canvasLeft;
+  const topRotate  = (ry - c.height/2) + canvasTop;
+
+  Object.assign(h.scale.style, { left: (leftScale-9) + "px", top: (topScale-9) + "px", display: "block", position: "absolute" });
+  Object.assign(h.rotate.style, { left: (leftRotate-9) + "px", top: (topRotate-9) + "px", display: "block", position: "absolute" });
+  h.scale.className = "element-handle visible";
+  h.rotate.className = "element-handle visible";
+
+  // mini handle sits near top-right corner of the selection box (slightly offset)
+  const miniX = (el.x||0) + 70*sc;
+  const miniY = (el.y||0) - 70*sc;
+  const miniLeft = (miniX) + canvasLeft + c.width/2;
+  const miniTop = (miniY) + canvasTop + c.height/2;
+  Object.assign(h.mini.style, { left: (miniLeft-10) + "px", top: (miniTop-10) + "px", display: "flex", position: "absolute" });
+  h.mini.className = "mini-handle visible";
+}
+
+function positionMiniHandleForScene(idx){
+  // small helper to reposition mini handle when selecting programmatically
+  drawHandlesForScene(idx);
+}
+
+/* ---------- Canvas interactions for each scene ---------- */
+function attachCanvasEvents(idx){
+  const c = document.getElementById(scenes[idx].canvasId);
+  const scObj = scenes[idx];
+  const h = handles[idx];
+
+  function getLocalCoords(clientX, clientY){
+    const rect = c.getBoundingClientRect();
+    const cx = (clientX - rect.left) - c.width/2;
+    const cy = (clientY - rect.top)  - c.height/2;
+    return { x: cx, y: cy };
+  }
+
+  // Use pointer events but limit to touch pointers only for editor interactions (per requirement)
+  c.addEventListener('pointerdown', function(e){
+    // Accept mouse and touch pointers for desktop usability
+    scObj.state.dragPointerType = e.pointerType || 'mouse';
+    setActiveScene(idx);
+    if(e.target === handles[idx]?.scale || e.target === handles[idx]?.rotate) return;
+    const local = getLocalCoords(e.clientX, e.clientY);
+    let found = -1;
+    for(let i=scObj.state.elementos.length-1;i>=0;i--){
+      let el = scObj.state.elementos[i], tx = el.x||0, ty = el.y||0, r = 60;
+      if(Math.abs(local.x - tx) < r && Math.abs(local.y - ty) < r){ found = i; break; }
+    }
+    if(found > -1){
+      selectElement(scObj, found);
+      scObj.state.arrastrando = true;
+      const localTouch = getLocalCoords(e.clientX, e.clientY);
+      scObj.state.dragX = localTouch.x - (scObj.state.elementos[found].x || 0);
+      scObj.state.dragY = localTouch.y - (scObj.state.elementos[found].y || 0);
+    } else {
+      scObj.state.selected = null;
+      updatePropPanel();
+      renderAll();
+    }
+  });
+
+  c.addEventListener('pointermove', function(e){
+    if(!scObj.state.arrastrando || scObj.state.selected == null) return;
+    const local = getLocalCoords(e.clientX, e.clientY);
+    const el = scObj.state.elementos[scObj.state.selected];
+    // direct move with small smoothing to avoid jumps
+    el.x = local.x - scObj.state.dragX;
+    el.y = local.y - scObj.state.dragY;
+    renderAll(); updatePropPanel();
+  });
+
+  c.addEventListener('pointerup', function(e){
+    scObj.state.arrastrando = false; scObj.state.dragPointerType = null; saveHistory(idx);
+  });
+  c.addEventListener('pointercancel', function(){ scObj.state.arrastrando = false; scObj.state.dragPointerType = null; });
+
+  // touch drag (for multitouch pinch)
+  c.addEventListener('touchstart', function(e){
+    setActiveScene(idx);
+    if(scObj.state.selected == null) return;
+    const touch = e.touches[0];
+    const rect = c.getBoundingClientRect();
+    const localX = (touch.clientX - rect.left) - c.width/2;
+    const localY = (touch.clientY - rect.top)  - c.height/2;
+    scObj.state.arrastrando = true;
+    scObj.state.dragX = localX - (scObj.state.elementos[scObj.state.selected].x || 0);
+    scObj.state.dragY = localY - (scObj.state.elementos[scObj.state.selected].y || 0);
+  }, { passive:false });
+
+  c.addEventListener('touchmove', function(e){
+    if(!scObj.state.arrastrando || scObj.state.selected == null) return;
+    const touch = e.touches[0];
+    const rect = c.getBoundingClientRect();
+    const localX = (touch.clientX - rect.left) - c.width/2;
+    const localY = (touch.clientY - rect.top)  - c.height/2;
+    const el = scObj.state.elementos[scObj.state.selected];
+    el.x = localX - scObj.state.dragX;
+    el.y = localY - scObj.state.dragY;
+    renderAll(); updatePropPanel();
+    e.preventDefault();
+  }, { passive:false });
+
+  c.addEventListener('touchend', function(){ scObj.state.arrastrando=false; saveHistory(idx); });
+
+  // pinch to scale/rotate (touch multi) - improved sensitivity + smoothing
+  let pinchStartDist=0, pinchStartScale=1, pinchStartAngle=0, pinchStartRot=0, multitouch=false;
+  c.addEventListener('touchstart', function(e){
+    if(e.touches.length===2 && scObj.state.selected != null){
+      multitouch=true;
+      pinchStartDist = getPinchDist(e);
+      pinchStartScale = scObj.state.elementos[scObj.state.selected].escala || 1;
+      pinchStartAngle = getPinchAngle(e);
+      pinchStartRot = scObj.state.elementos[scObj.state.selected].rotacion || 0;
+    }
+  }, { passive:false });
+  c.addEventListener('touchmove', function(e){
+    if(multitouch && e.touches.length===2 && scObj.state.selected != null){
+      let nDist = getPinchDist(e);
+      // smoother factor: use a divider to reduce sensitivity and lerp towards new scale
+      let rawFactor = nDist / pinchStartDist;
+      let target = Math.max(0.13, Math.min(pinchStartScale * rawFactor, 5));
+      let el = scObj.state.elementos[scObj.state.selected];
+      // lerp for smoothing
+      el.escala = el.escala + (target - el.escala) * 0.28;
+      let angle = getPinchAngle(e), dAngle = angle - pinchStartAngle;
+      el.rotacion = (pinchStartRot + dAngle) % 360;
+      renderAll(); updatePropPanel();
+      e.preventDefault();
+    }
+  }, { passive:false });
+  c.addEventListener('touchend', function(){ multitouch=false; saveHistory(idx); });
+
+  function getPinchDist(e){ let x0=e.touches[0].clientX,y0=e.touches[0].clientY,x1=e.touches[1].clientX,y1=e.touches[1].clientY; return Math.sqrt((x1-x0)**2+(y1-y0)**2); }
+  function getPinchAngle(e){ let x0=e.touches[0].clientX,y0=e.touches[0].clientY,x1=e.touches[1].clientX,y1=e.touches[1].clientY; return Math.atan2(y1-y0,x1-x0)*180/Math.PI; }
+
+  // scale & rotate handle dragging using pointer events (allow mouse & touch)
+  h.scale.addEventListener('pointerdown', function(ev){ setActiveScene(idx); if(scObj.state.selected==null) return; scObj.state.scaleDragging=true; scObj.state.dragInit = setupHandleDrag(ev, scObj, c); ev.stopPropagation(); });
+  h.rotate.addEventListener('pointerdown', function(ev){ setActiveScene(idx); if(scObj.state.selected==null) return; scObj.state.rotateDragging=true; scObj.state.dragInit = setupHandleDrag(ev, scObj, c); ev.stopPropagation(); });
+
+  document.addEventListener('pointermove', function(e){
+    if(scObj.state.dragPointerType && scObj.state.dragPointerType!=='touch') return;
+    if(scObj.state.scaleDragging) scaleElementDrag(e, scObj, c);
+    if(scObj.state.rotateDragging) rotateElementDrag(e, scObj, c);
+  });
+  document.addEventListener('pointerup', function(e){
+    if(scObj.state.scaleDragging || scObj.state.rotateDragging){ scObj.state.scaleDragging = scObj.state.rotateDragging = false; saveHistory(idx); }
+    scObj.state.dragPointerType = null;
+  });
+
+  function setupHandleDrag(ev, scObjLocal, canvasEl){
+    let el = scObjLocal.state.elementos[scObjLocal.state.selected], cx=canvasEl.width/2, cy=canvasEl.height/2;
+    let mx=ev.clientX, my=ev.clientY, ex=el.x||0, ey=el.y||0, sc=el.escala||1, rt=el.rotacion||0;
+    scObjLocal.state.dragPointerType = ev.pointerType;
+    return { x: mx, y: my, ex, ey, cx, cy, sc, rt };
+  }
+  function scaleElementDrag(ev, scObjLocal, canvasEl){
+    if(scObjLocal.state.dragPointerType && scObjLocal.state.dragPointerType!=='touch') return;
+    let el = scObjLocal.state.elementos[scObjLocal.state.selected];
+    const rect = canvasEl.getBoundingClientRect();
+    let x0 = ev.clientX - rect.left - canvasEl.width/2 - (el.x||0);
+    let y0 = ev.clientY - rect.top  - canvasEl.height/2 - (el.y||0);
+    let r = Math.sqrt(x0*x0 + y0*y0) / 110; // adjusted divisor for finer control
+    // lerp smoothing for better feel
+    let target = Math.max(0.13, Math.min(r, 5));
+    el.escala = el.escala + (target - el.escala) * 0.32;
+    renderAll();
+  }
+  function rotateElementDrag(ev, scObjLocal, canvasEl){
+    if(scObjLocal.state.dragPointerType && scObjLocal.state.dragPointerType!=='touch') return;
+    let el = scObjLocal.state.elementos[scObjLocal.state.selected];
+    const rect = canvasEl.getBoundingClientRect();
+    let x0 = rect.left + canvasEl.width/2 + (el.x||0), y0 = rect.top + canvasEl.height/2 + (el.y||0);
+    let angle = Math.atan2(ev.clientY - y0, ev.clientX - x0);
+    // smooth rotate by small lerp to avoid snapped rotation on touch
+    let target = (angle*180/Math.PI + 360) % 360;
+    el.rotacion = el.rotacion + (target - el.rotacion) * 0.45;
+    renderAll();
+  }
+}
+
+/* ---------- History & controls ---------- */
+function saveHistory(idx){ const sc=scenes[idx].state; sc.historial.push(JSON.stringify(sc.elementos)); if(sc.historial.length>99) sc.historial.shift(); sc.historialRedo=[]; }
+function undo(){ const sc=currentScene().state; if(sc.historial.length>1){ sc.historialRedo.push(sc.historial.pop()); sc.elementos = JSON.parse(sc.historial[sc.historial.length-1]); sc.selected=null; renderAll(); } }
+function redo(){ const sc=currentScene().state; if(sc.historialRedo.length>0){ let est=sc.historialRedo.pop(); sc.historial.push(est); sc.elementos = JSON.parse(est); sc.selected=null; renderAll(); } }
+function setShirtColor(c){
+  const applyBoth = document.getElementById('apply-to-both') && document.getElementById('apply-to-both').checked;
+  if(applyBoth){
+    scenes.forEach(s=>{ s.state.shirt.color = c; });
+  } else {
+    const sc=currentScene(); sc.state.shirt.color = c;
+  }
+  document.getElementById('color-base').value = c;
+  renderAll();
+}
+function setShirtType(t){ const sc=currentScene(); sc.state.shirt.type = t; document.getElementById('shirt-type').value = t; renderAll(); }
+function zoom(f){ const sc=currentScene(); sc.state.zoom = Math.max(0.45, Math.min(sc.state.zoom * f, 3.5)); renderAll(); }
+function resetCanvas(){ if(confirm('¿Limpiar todo de la escena activa?')){ const sc=currentScene(); sc.state.elementos = []; sc.state.selected = null; sc.state.zoom = 1; saveHistory(currentSceneIndex); renderAll(); } }
+function exportPNG(){ const idx=currentSceneIndex; const c=canvases[idx]; let c2=document.createElement('canvas'); c2.width=c.width*2; c2.height=c.height*2; let c2ctx=c2.getContext('2d'); c2ctx.scale(2,2); c2ctx.fillStyle='#fff'; c2ctx.fillRect(0,0,c.width,c.height); c2ctx.drawImage(c,0,0); let a=document.createElement('a'); a.href=c2.toDataURL('image/png'); a.download='diseño_'+scenes[idx].name+'_'+Date.now()+'.png'; a.click(); toast("PNG descargado ("+scenes[idx].name+")","success"); }
+  
+  // Render without selection highlight to an offscreen canvas
+  function exportPNG(){ const idx=currentSceneIndex; const src = canvases[idx]; const out = document.createElement('canvas'); out.width = src.width*2; out.height = src.height*2; const octx = out.getContext('2d'); octx.scale(2,2); octx.fillStyle='#fff'; octx.fillRect(0,0,src.width,src.height);
+    // render scene into offscreen context without selection
+    window.suppressSelection = true;
+    drawShirtRealista(octx, src, scenes[idx].state);
+    drawElements(octx, src, scenes[idx].state, idx);
+    window.suppressSelection = false;
+    const a=document.createElement('a'); a.href = out.toDataURL('image/png'); a.download = 'diseño_'+scenes[idx].name+'_'+Date.now()+'.png'; a.click(); toast('PNG descargado ('+scenes[idx].name+')','success'); }
+function exportBothPNG(){
+  // Create a single image concatenating both scenes vertically, rendered without selection outlines
+  const c0 = canvases[0], c1 = canvases[1];
+  const w = Math.max(c0.width, c1.width);
+  const h = c0.height + c1.height;
+  let out = document.createElement('canvas');
+  out.width = w * 2;
+  out.height = h * 2;
+  let octx = out.getContext('2d');
+  octx.scale(2,2);
+  octx.fillStyle = '#ffffff';
+  octx.fillRect(0,0,w,h);
+  // render front without selection
+  window.suppressSelection = true;
+  drawShirtRealista(octx, c0, scenes[0].state);
+  drawElements(octx, c0, scenes[0].state, 0);
+  // draw back below (translate)
+  octx.translate(0, c0.height);
+  drawShirtRealista(octx, c1, scenes[1].state);
+  drawElements(octx, c1, scenes[1].state, 1);
+  window.suppressSelection = false;
+  // download
+  let a=document.createElement('a');
+  a.href=out.toDataURL('image/png');
+  a.download='diseños_frente_trasera_'+Date.now()+'.png';
+  a.click();
+  toast("Exportado: frente + trasera en una sola imagen","success");
+}
+
+async function saveProject(){
+  const nombre=(prompt('Nombre del proyecto:','Proyecto-'+Date.now())||"Proyecto").substring(0,64);
+  const proyectoPayload = {
+    nombre,
+    descripcion: '',
+    color_prenda: (scenes[0] && scenes[0].state && scenes[0].state.shirt && scenes[0].state.shirt.color) ? scenes[0].state.shirt.color : '#000000',
+    talla: '',
+    tags: '',
+    elementos: scenes.map(s=>({ name:s.name, shirt:s.state.shirt, elementos:s.state.elementos, imglist:s.state.imglist })),
+    fecha_creacion: new Date().toISOString()
+  };
+
+  const API_BASE_URL = window.API_BASE_URL || (location.protocol + '//' + location.hostname + (location.port?(':'+location.port):'') + '/api');
+  const token = localStorage.getItem('auth_token');
+
+  // Try to save to server (use Authorization if token present, otherwise rely on cookie via credentials)
+  try {
+      // Create proyecto
+      const res = await fetch(`${API_BASE_URL}/proyectos`, {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'Authorization': `Bearer ${token}` } : {}),
+        credentials: 'include',
+        body: JSON.stringify({ nombre: proyectoPayload.nombre, descripcion: proyectoPayload.descripcion, color_prenda: proyectoPayload.color_prenda, talla: proyectoPayload.talla, tags: proyectoPayload.tags })
+      });
+      const data = await res.json();
+      // Server may return different shapes: { success:true, proyecto_id: N } or { success:true, data:{proyecto:{id: N}} }
+      let proyectoId = null;
+      if (data && data.success) {
+        if (typeof data.proyecto_id !== 'undefined') proyectoId = data.proyecto_id;
+        else if (data.data && data.data.proyecto && data.data.proyecto.id) proyectoId = data.data.proyecto.id;
+        else if (data.data && data.data.proyecto_id) proyectoId = data.data.proyecto_id;
+      }
+      if (proyectoId) {
+        // Upload/replace elementos atomically using PUT endpoint
+        await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/elementos`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          credentials: 'include',
+          body: JSON.stringify({ elementos: proyectoPayload.elementos })
+        });
+
+        // Notify other pages (list) that a new proyecto is available
+        try { localStorage.setItem('lf_project_saved', JSON.stringify({ id: proyectoId, ts: Date.now() })); } catch(e){/*ignore*/}
+        toast('Proyecto guardado en servidor!','success');
+        return;
+      } else {
+        console.warn('Creación de proyecto falló, fallback a localStorage', data);
+      }
+    } catch (err) {
+      console.error('Error guardando proyecto en servidor:', err);
+      toast('No fue posible guardar en servidor, guardando localmente','error');
+    }
+
+  // Fallback: save locally
+    try {
+    let proyectos=JSON.parse(localStorage.getItem('mis_proyectos_lf23')||'[]');
+    proyectos.push({ nombre: proyectoPayload.nombre, escenas: proyectoPayload.elementos, fecha: proyectoPayload.fecha_creacion });
+    localStorage.setItem('mis_proyectos_lf23', JSON.stringify(proyectos));
+    try { localStorage.setItem('lf_project_saved', JSON.stringify({ id: null, ts: Date.now() })); } catch(e){}
+    toast('Proyecto guardado localmente!','success');
+  } catch(e){
+    console.error('Error guardando localmente:', e);
+    toast('Error guardando proyecto','error');
+  }
+}
+
+/* ---------- Mini-handle scale functions (public) ---------- */
+function scaleSelectedUp(){
+  const sc=currentScene();
+  if(sc.state.selected==null) return;
+  let el = sc.state.elementos[sc.state.selected];
+  el.escala = Math.min((el.escala||1) * 1.12, 5);
+  saveHistory(currentSceneIndex);
+  renderAll();
+}
+function scaleSelectedDown(){
+  const sc=currentScene();
+  if(sc.state.selected==null) return;
+  let el = sc.state.elementos[sc.state.selected];
+  el.escala = Math.max((el.escala||1) / 1.12, 0.13);
+  saveHistory(currentSceneIndex);
+  renderAll();
+}
+
+/* ---------- Utilities ---------- */
+function toast(msg,type){ let t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; t.style.background = type=='error'?'#a33322':type=='success'? '#0d9f20':'#444'; setTimeout(()=>t.style.display='none',2000); }
+document.addEventListener('keydown', function(e){
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.ctrlKey||e.metaKey){ if(e.key==='z'){ e.preventDefault(); undo(); } if(e.key==='y'){ e.preventDefault(); redo(); } if(e.key==='s'){ e.preventDefault(); saveProject(); } }
+  const sc = currentScene();
+  if(sc.state.selected != null){
+    let el = sc.state.elementos[sc.state.selected], paso=7;
+    if(e.key==='ArrowUp'){ el.y -= paso; renderAll(); updatePropPanel(); positionMiniHandleForScene(currentSceneIndex); }
+    if(e.key==='ArrowDown'){ el.y += paso; renderAll(); updatePropPanel(); positionMiniHandleForScene(currentSceneIndex); }
+    if(e.key==='ArrowLeft'){ el.x -= paso; renderAll(); updatePropPanel(); positionMiniHandleForScene(currentSceneIndex); }
+    if(e.key==='ArrowRight'){ el.x += paso; renderAll(); updatePropPanel(); positionMiniHandleForScene(currentSceneIndex); }
+    if(e.key==='Delete'){ deleteCurrent(); }
+    if(e.key==='r'||e.key==='R'){ el.rotacion=(el.rotacion+15)%360; renderAll(); updatePropPanel(); }
+    if(e.key==='+'||e.key==='='){ el.escala=Math.min((el.escala||1)+0.07,4); renderAll(); updatePropPanel(); }
+    if(e.key==='-'){ el.escala=Math.max((el.escala||1)-0.07,0.2); renderAll(); updatePropPanel(); }
+  }
+});
+
+/* ---------- Small drawing helpers ---------- */
+function roundEllipseFill(ctx,x,y,rx,ry){
+  ctx.beginPath();
+  ctx.ellipse(x,y,rx,ry,0,0,2*Math.PI);
+  ctx.fill();
+}
+function shadeColor(hex, percent){
+  try{
+    let col = hex.replace('#','');
+    if(col.length===3) col = col.split('').map(c=>c+c).join('');
+    let R = parseInt(col.substring(0,2),16);
+    let G = parseInt(col.substring(2,4),16);
+    let B = parseInt(col.substring(4,6),16);
+    R = Math.min(255, Math.max(0, R + Math.round(R * percent/100)));
+    G = Math.min(255, Math.max(0, G + Math.round(G * percent/100)));
+    B = Math.min(255, Math.max(0, B + Math.round(B * percent/100)));
+    return '#'+(R.toString(16).padStart(2,'0'))+(G.toString(16).padStart(2,'0'))+(B.toString(16).padStart(2,'0'));
+  }catch(e){ return hex; }
+}
+
+/* ---------- Endpoints to expose for inline handlers ---------- */
+window.setActiveScene = setActiveScene;
+window.addSticker = addSticker;
+window.addImgToCanvas = addImgToCanvas;
+window.addLFutureLogo = addLFutureLogo;
+window.selectStickerCategory = selectStickerCategory;
+window.addStickerToBoth = addStickerToBoth;
+window.duplicateToOther = duplicateToOther;
+window.addTextToActive = addTextToActive;
+window.addTextToBoth = addTextToBoth;
+window.deleteCurrent = deleteCurrent;
+window.resetCanvas = resetCanvas;
+window.exportPNG = exportPNG;
+window.exportBothPNG = exportBothPNG;
+window.saveProject = saveProject;
+window.setShirtColor = setShirtColor;
+window.setShirtType = setShirtType;
+window.scaleSelectedUp = scaleSelectedUp;
+window.scaleSelectedDown = scaleSelectedDown;
+
+/* ---------- initial render helper ---------- */
+function selectElementByIndexForScene(idx){ selectElement(currentScene(), idx); renderAll(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - L-FUTURE</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="perfil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="idiomas.js"></script>
+</head>
+<body>
+    <div id="spinner-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(30,30,30,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#222;padding:30px 40px;border-radius:12px;box-shadow:0 2px 12px #000;display:flex;flex-direction:column;align-items:center;">
+            <i class="fas fa-spinner fa-spin" style="font-size:48px;color:#FFD700;"></i>
+            <span id="spinner-text" style="margin-top:18px;color:#FFD700;font-size:18px;">Cargando...</span>
+        </div>
+    </div>
+    <script>
+        if (!requireAuth()) {}
+    </script>
+    
+    <!-- Contenedor principal -->
+    <div class="contenedor-principal">
+        <!-- Barra lateral con menú de navegación -->
+        <aside class="barra-lateral">
+            <div class="logo">
+                <h1 class="titulo">L-FUTURE</h1>
+                <p class="eslogan">Revoluciona tu forma de vestir</p>
+            </div>
+            
+            <!-- Botón de cierre para móviles -->
+            <button class="btn-cerrar-movil" id="btnCerrarMovil">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- Menú de navegación -->
+            <nav class="menu-navegacion">
+                <ul>
+                    <li><a href="inicio.html"><i class="fas fa-home"></i> <span>Inicio</span></a></li>
+                    <li><a href="diseños1.0.html"><i class="fas fa-shirt"></i> <span>Mis Proyectos</span></a></li>
+                    <li><a href="diseños L-Future.html"><i class="fas fa-globe-americas"></i> <span>Proyectos L-FUTURE</span></a></li>
+                    <li><a href="sobre nosotros.html"><i class="fas fa-users"></i> <span>Sobre Nosotros</span></a></li>
+                    <li><a href="editor-3d.html"><i class="fas fa-paint-brush"></i> <span>Diseños-3D</span></a></li>
+                    <li><a href="perfil.html" class="activo"><i class="fas fa-cog"></i> <span>Configuración</span></a></li>
+                </ul>
+            
+            <!-- Información del usuario en la barra lateral -->
+            <div class="info-usuario-lateral">
+                <div class="avatar">
+                    <img src="" alt="Avatar" class="user-avatar" loading="lazy" onerror="this.style.display='none';document.getElementById('avatar-user').style.display='flex';">
+                </div>
+                <h3 class="user-name">Usuario</h3>
+                <p class="user-type-badge">Usuario</p>
+            </div>
+            
+            <!-- Botón de cierre de sesión -->
+            <button class="btn-signout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="contenido-principal">
+            <header class="encabezado">
+                <div class="encabezado-izquierda">
+                    <button class="btn-menu" id="btnMenu" title="Abrir menú lateral">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2>Mi Perfil</h2>
+                </div>
+                <div class="avatar-encabezado">
+                    <img src="" alt="Foto de perfil" class="user-avatar" loading="lazy" onerror="this.style.display='none';document.getElementById('avatar-user').style.display='flex';">
+                    <div class="encabezado-username"></div>
+                </div>
+                <div class="grupo-control" style="margin-left:20px;">
+                    <label for="selectorTema">Tema:</label>
+                    <select id="selectorTema" title="Selecciona el tema de color">
+                        <option value="oscuro">Oscuro</option>
+                        <option value="claro">Claro</option>
+                        <option value="azul">Azul</option>
+                        <option value="verde">Verde</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- Sección de información del perfil -->
+            <section class="seccion-perfil">
+                <h3 class="titulo-seccion">Información Personal</h3>
+                
+                <div class="tarjeta-perfil">
+                    <div class="info-perfil">
+                        <div class="campo-perfil">
+                            <label><i class="fas fa-user"></i> Nombre completo:</label>
+                            <div class="valor" id="nombre-completo-value">Cargando...</div>
+                        </div>
+                        
+                        <div class="campo-perfil">
+                            <label><i class="fas fa-at"></i> Nombre de usuario:</label>
+                            <div class="valor">@<span id="username-value">usuario</span></div>
+                        </div>
+                        
+                        <div class="campo-perfil">
+                            <label><i class="fas fa-crown"></i> Tipo de cuenta:</label>
+                            <div class="valor" id="tipo-usuario-value">Usuario</div>
+                        </div>
+                    </div>
+                    
+                    <div class="foto-perfil-container">
+                        <div class="foto-perfil-iniciales">
+                            <div class="avatar-iniciales" id="avatar-user" style="display:none;">U</div>
+                        </div>
+                        <p class="nombre-usuario user-name">Cargando...</p>
+                        <p class="username-texto">@<span id="username-display">usuario</span></p>
+                        <button class="btn-editar-perfil" id="btnEditarPerfil" title="Editar tu nombre de usuario">
+                            <i class="fas fa-edit"></i> Editar Nombre
+                        </button>
+                        <span class="tooltip-info" style="margin-left:8px; color:#FFD700; font-size:13px;" title="Personaliza tu nombre para que tus amigos te reconozcan fácilmente.">🛈</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Seguridad -->
+            <section class="seccion-seguridad">
+                <h3 class="titulo-seccion"><i class="fas fa-shield-alt"></i> Seguridad de la Cuenta</h3>
+                
+                <div class="tarjeta-configuracion">
+                    <h4><i class="fas fa-key"></i> Cambiar Contraseña</h4>
+                    <p>Actualiza tu contraseña para mantener tu cuenta segura. Debe tener al menos 8 caracteres.</p>
+                    
+                    <form id="formCambiarPassword" class="form-password">
+                        <div class="campo-form">
+                            <label for="passwordActual">
+                                <i class="fas fa-lock"></i> Contraseña Actual
+                            </label>
+                            <input 
+                                type="password" 
+                                id="passwordActual" 
+                                placeholder="Ingresa tu contraseña actual"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="campo-form">
+                            <label for="passwordNueva">
+                                <i class="fas fa-lock-open"></i> Nueva Contraseña
+                            </label>
+                            <input 
+                                type="password" 
+                                id="passwordNueva" 
+                                placeholder="Mínimo 8 caracteres"
+                                required
+                                minlength="8"
+                            >
+                        </div>
+                        
+                        <div class="campo-form">
+                            <label for="passwordConfirmar">
+                                <i class="fas fa-check-circle"></i> Confirmar Nueva Contraseña
+                            </label>
+                            <input 
+                                type="password" 
+                                id="passwordConfirmar" 
+                                placeholder="Repite la nueva contraseña"
+                                required
+                            >
+                        </div>
+                        
+                        <button type="submit" class="btn-guardar">
+                            <i class="fas fa-save"></i> Cambiar Contraseña
+                        </button>
+                    </form>
+                    
+                    <div id="error-message" class="mensaje-error" style="display: none;"></div>
+                    <div id="success-message" class="mensaje-exito" style="display: none;"></div>
+                </div>
+            </section>
+
+            <!-- Sección de configuración básica -->
+            <section class="seccion-configuracion">
+                <h3 class="titulo-seccion">Preferencias</h3>
+                
+                <div class="tarjeta-configuracion">
+                    <div class="configuracion-opcion">
+                        <div class="texto">
+                            <h4><i class="fas fa-bell"></i> Notificaciones</h4>
+                            <p>Recibir alertas y notificaciones del sistema</p>
+                        </div>
+                        <label class="interruptor">
+                            <input type="checkbox" checked>
+                            <span class="deslizador"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="configuracion-opcion">
+                        <div class="texto">
+                            <h4><i class="fas fa-moon"></i> Modo Oscuro</h4>
+                            <p>Activar la interfaz con colores oscuros</p>
+                        </div>
+                        <label class="interruptor">
+                            <input type="checkbox" checked>
+                            <span class="deslizador"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="configuracion-opcion">
+                        <div class="texto">
+                            <h4><i class="fas fa-language"></i> Idioma</h4>
+                            <p>Selecciona tu idioma preferido</p>
+                        </div>
+                        <select>
+                            <option>Español</option>
+                            <option>English</option>
+                            <option>Français</option>
+                            <option>Português</option>
+                        </select>
+                    </div>
+                    
+                    <div class="configuracion-opcion">
+                        <div class="texto">
+                            <h4><i class="fas fa-lock"></i> Privacidad</h4>
+                            <p>Configurar visibilidad de perfil</p>
+                        </div>
+                        <select>
+                            <option>Público</option>
+                            <option>Privado</option>
+                            <option>Solo amigos</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Editar Nombre -->
+    <div id="modalEditarPerfil" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3><i class="fas fa-user-edit"></i> Editar Nombre</h3>
+            <p>Este nombre se mostrará en todas las páginas de L-FUTURE</p>
+            <form id="formEditarPerfil">
+                <div class="campo-form">
+                    <label for="edit-nombre-completo">Nombre Completo:</label>
+                    <input 
+                        type="text" 
+                        id="edit-nombre-completo" 
+                        placeholder="Ej: Leandro Rojas"
+                        required
+                        maxlength="50"
+                    >
+                    <span class="tooltip-info" style="margin-left:8px; color:#FFD700; font-size:13px;" title="Usa tu nombre real para una mejor experiencia.">🛈</span>
+                    >
+                </div>
+                <div class="modal-botones">
+                    <button type="submit" class="btn-guardar">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <span class="tooltip-info" style="margin-left:8px; color:#FFD700; font-size:13px;" title="Guarda tus cambios para mantener tu información actualizada.">🛈</span>
+                    <button type="button" id="btnCancelarEditar" class="btn-cancelar">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript para el menú móvil (se mantiene inline)
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnMenu = document.querySelector('.btn-menu');
+            const barraLateral = document.querySelector('.barra-lateral');
+            const btnCerrarMovil = document.querySelector('.btn-cerrar-movil');
+            
+            if (btnMenu && barraLateral) {
+                btnMenu.addEventListener('click', function() {
+                    barraLateral.classList.add('activa');
+                });
+            }
+            
+            if (btnCerrarMovil && barraLateral) {
+                btnCerrarMovil.addEventListener('click', function() {
+                    barraLateral.classList.remove('activa');
+                });
+            }
+        });
+    </script>
+    <script type="module" src="./main-loader.js"></script>
+    <script src="shared/layout-init.js"></script>
+    
+    <style>
+        /* Estilos adicionales para perfil */
+        .foto-perfil-iniciales {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+        }
+
+        .avatar-iniciales {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #000;
+            color: #FFD700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .nombre-usuario {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 10px 0 5px;
+        }
+
+        .username-texto {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .form-password {
+            max-width: 500px;
+            margin: 20px 0;
+        }
+
+        .campo-form {
+            margin-bottom: 20px;
+        }
+
+        .campo-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: #FFD700;
+            font-weight: 500;
+        }
+
+        .campo-form input, .campo-form select {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .campo-form input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+
+        .btn-guardar {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-guardar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #FFD700;
+            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.3);
+        }
+
+        .modal-content h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .modal-content p {
+            color: #999;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .modal-botones {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancelar {
+            background: #333;
+            color: #fff;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancelar:hover {
+            background: #444;
+        }
+
+        .mensaje-error, .mensaje-exito {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mensaje-error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            color: #ff6b6b;
+        }
+
+        .mensaje-exito {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #51cf66;
+        }
+
+        .seccion-seguridad, .seccion-perfil, .seccion-configuracion {
+            margin-bottom: 30px;
+        }
+
+        .titulo-seccion {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+    </style>
+    <script>
+        // Populate profile UI with user data and translations
+        document.addEventListener('DOMContentLoaded', function(){
+            try{
+                const user = typeof getUser === 'function' ? getUser() : (window.getUser && window.getUser());
+                if(user){
+                    const name = user.nombre_completo || user.username || user.name || 'Usuario';
+                    document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
+                    const username = user.username || (user.email ? user.email.split('@')[0] : 'usuario');
+                    document.querySelectorAll('.encabezado-username, .user-name, .username-texto').forEach(el => {
+                        if(el.classList && el.classList.contains('username-texto')) return; // handled below
+                    });
+                    const avatarImgs = document.querySelectorAll('.user-avatar');
+                    avatarImgs.forEach(img => {
+                        img.src = user.foto_perfil || ('https://placehold.co/100x100/1a1a1a/FFD700?text=' + (name.charAt(0) || 'U').toUpperCase());
+                    });
+                    const nombreEl = document.getElementById('nombre-completo-value');
+                    if(nombreEl) nombreEl.textContent = name;
+                    const usernameVal = document.getElementById('username-value');
+                    if(usernameVal) usernameVal.textContent = username;
+                    const usernameDisplay = document.getElementById('username-display');
+                    if(usernameDisplay) usernameDisplay.textContent = username;
+                    document.querySelectorAll('.nombre-usuario').forEach(el => el.textContent = name);
+                }
+                // localize certain labels if idiomas present
+                if(window.LFUTURE_getTraduccion){
+                    document.querySelectorAll('label[for="selectPlantilla"]').forEach(n=>n.textContent = window.LFUTURE_getTraduccion('es','tema'));
+                }
+            }catch(e){ console.warn('Perfil init error', e); }
+        });
+    </script>
+</body>
+</html>

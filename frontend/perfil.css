@@ -1,0 +1,281 @@
+/* perfil.css - Estilos específicos para la página de perfil */
+
+/* Información de perfil mejorada */
+.info-perfil {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.campo-perfil {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.campo-perfil label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #FFD700;
+    font-size: 0.9rem;
+    gap: 10px;
+}
+
+.campo-perfil .valor {
+    padding: 12px 15px;
+    background: rgba(10, 10, 10, 0.7);
+    border: 1px solid rgba(218, 165, 32, 0.3);
+    border-radius: 8px;
+    color: #fff;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.campo-perfil .valor:hover {
+    border-color: #FFD700;
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.2);
+}
+
+/* Foto de perfil mejorada */
+.foto-perfil-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.foto-perfil {
+    width: 150px;
+    height: 150px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    background: linear-gradient(45deg, #DAA520, #FFD700, #DAA520);
+    padding: 3px;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.foto-perfil img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.cambiar-foto {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+    color: #000;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #000;
+}
+
+.cambiar-foto:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.7);
+}
+
+.btn-editar-perfil {
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-editar-perfil:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(218, 165, 32, 0.4);
+}
+
+/* Configuración básica mejorada */
+.configuracion-opcion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(218, 165, 32, 0.1);
+}
+
+.configuracion-opcion:last-child {
+    border-bottom: none;
+}
+
+.configuracion-opcion .texto h4 {
+    color: #ffffff;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.configuracion-opcion .texto p {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+/* Interruptor de configuración mejorado */
+.interruptor {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.interruptor input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.deslizador {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.deslizador:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .deslizador {
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+}
+
+input:checked + .deslizador:before {
+    transform: translateX(26px);
+}
+
+/* Estilos para selects en configuración mejorados */
+.configuracion-opcion select {
+    background: rgba(10, 10, 10, 0.7);
+    color: white;
+    border: 1px solid rgba(218, 165, 32, 0.3);
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    min-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.configuracion-opcion select:focus {
+    outline: none;
+    border-color: #FFD700;
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.3);
+}
+
+.configuracion-opcion select:hover {
+    border-color: #FFD700;
+}
+
+/* Responsive específico para perfil */
+@media (max-width: 768px) {
+    .grid-estadisticas {
+        grid-template-columns: 1fr;
+    }
+    
+    .configuracion-opcion {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .configuracion-opcion select {
+        min-width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .foto-perfil {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .info-perfil {
+        grid-template-columns: 1fr;
+    }
+    
+    .actividad-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .icono-actividad {
+        align-self: center;
+    }
+}
+
+/* Animaciones adicionales */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tarjeta-perfil, .tarjeta-configuracion, .tarjeta-estadistica, .tarjeta-actividad {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.tarjeta-estadistica:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.tarjeta-estadistica:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.tarjeta-estadistica:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.actividad-item {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.actividad-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.actividad-item:nth-child(3) {
+    animation-delay: 0.2s;
+}

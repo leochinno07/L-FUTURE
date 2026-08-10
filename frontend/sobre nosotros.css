@@ -1,0 +1,511 @@
+/* ==========================================================================
+   SOBRE NOSOTROS.CSS - Estilos específicos para página "Sobre Nosotros"
+   Diseño optimizado para móviles y estilo periódico moderno
+   ========================================================================== */
+
+/* Contenedor principal del diseño tipo periódico */
+.periodico-container {
+    background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+    border: 1px solid rgba(218, 165, 32, 0.1);
+}
+
+/* Cabecera del periódico */
+.periodico-header {
+    text-align: center;
+    padding-bottom: 25px;
+    margin-bottom: 30px;
+    border-bottom: 3px double #DAA520;
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.05) 0%, transparent 100%);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.periodico-titulo {
+    font-size: 3.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.periodico-fecha {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.periodico-fecha i {
+    margin-right: 8px;
+    color: #DAA520;
+}
+
+.periodico-subtitulo {
+    font-size: 1.3rem;
+    color: #444;
+    max-width: 800px;
+    margin: 0 auto 15px;
+    line-height: 1.5;
+}
+
+.periodico-temperatura {
+    background: linear-gradient(45deg, #DAA520, #FFD700);
+    color: #000;
+    padding: 8px 15px;
+    border-radius: 20px;
+    display: inline-block;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+/* Layout de columnas responsive */
+.periodico-columnas {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.columna-principal {
+    border-right: 2px solid rgba(218, 165, 32, 0.2);
+    padding-right: 30px;
+}
+
+.columna-lateral {
+    padding-left: 20px;
+}
+
+/* Artículos del periódico - Estilo moderno */
+.articulo-periodico {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 35px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.articulo-periodico:hover {
+    transform: translateY(-3px);
+}
+
+.articulo-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(218, 165, 32, 0.3);
+}
+
+.titulo-articulo {
+    font-size: 1.8rem;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.articulo-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+}
+
+.articulo-categoria {
+    background: #DAA520;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+.articulo-tiempo-lectura {
+    color: #666;
+}
+
+/* Imágenes optimizadas para rendimiento */
+.imagen-articulo {
+    margin: 25px 0;
+    text-align: center;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.imagen-articulo img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    transition: transform 0.5s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.imagen-articulo:hover img {
+    transform: scale(1.02);
+}
+
+.pie-imagen {
+    font-style: italic;
+    color: #666;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    padding: 0 10px;
+}
+
+/* Contenido de artículos */
+.articulo-contenido p {
+    margin-bottom: 18px;
+    text-align: justify;
+    line-height: 1.7;
+    color: #444;
+}
+
+.cita-destacada {
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.08) 0%, rgba(255, 215, 0, 0.08) 100%);
+    border-left: 4px solid #DAA520;
+    padding: 20px;
+    margin: 25px 0;
+    font-style: italic;
+    color: #555;
+    border-radius: 0 8px 8px 0;
+    font-size: 1.1rem;
+}
+
+/* Listas mejoradas */
+.lista-caracteristicas {
+    list-style: none;
+    margin: 20px 0;
+}
+
+.lista-caracteristicas li {
+    margin-bottom: 12px;
+    padding-left: 30px;
+    position: relative;
+    line-height: 1.5;
+}
+
+.lista-caracteristicas li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #DAA520;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Especificaciones del producto */
+.especificaciones-producto {
+    background: rgba(218, 165, 32, 0.05);
+    padding: 25px;
+    border-radius: 10px;
+    margin: 25px 0;
+}
+
+.especificaciones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.especificacion-item {
+    text-align: center;
+    padding: 15px;
+}
+
+.especificacion-item i {
+    font-size: 2.5rem;
+    color: #DAA520;
+    margin-bottom: 10px;
+}
+
+.especificacion-item h5 {
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.especificacion-item p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0;
+}
+
+/* Habilidades del CEO */
+.habilidades-ceo {
+    margin-top: 25px;
+}
+
+.habilidades-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.habilidad {
+    background: rgba(218, 165, 32, 0.1);
+    color: #DAA520;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(218, 165, 32, 0.3);
+}
+
+/* Redes sociales de la marca */
+.redes-marca {
+    margin-top: 20px;
+}
+
+.redes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.redes-lista .red-social {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: rgba(218, 165, 32, 0.05);
+    border-radius: 8px;
+    text-decoration: none;
+    color: #d6b26f;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(218, 165, 32, 0.2);
+}
+
+.redes-lista .red-social:hover {
+    background: rgba(218, 165, 32, 0.1);
+    transform: translateX(5px);
+    color: #b8860b;
+
+}
+
+/* Sección CS50 especial */
+.articulo-cs50 {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #DAA520;
+}
+
+.contenedor-logos {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.contenedor-logos img {
+    max-width: 150px;
+    height: auto;
+    filter: grayscale(0.3);
+    transition: filter 0.3s ease;
+}
+
+.contenedor-logos img:hover {
+    filter: grayscale(0);
+}
+
+/* Footer del periódico */
+.periodico-footer {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 3px double #DAA520;
+}
+
+.footer-contenido {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-info p {
+    margin-bottom: 5px;
+    color: #666;
+}
+
+.footer-enlaces {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-enlaces a {
+    color: #DAA520;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.footer-enlaces a:hover {
+    color: #b8860b;
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   MEDIA QUERIES - RESPONSIVE DESIGN
+   ========================================================================== */
+
+/* Tabletas (768px - 992px) */
+@media (max-width: 992px) {
+    .periodico-columnas {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .columna-principal {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 2px solid rgba(218, 165, 32, 0.2);
+        padding-bottom: 30px;
+    }
+    
+    .columna-lateral {
+        padding-left: 0;
+    }
+    
+    .periodico-titulo {
+        font-size: 2.5rem;
+    }
+    
+    .especificaciones-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .footer-contenido {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Móviles (576px - 768px) */
+@media (max-width: 768px) {
+    .periodico-container {
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .periodico-titulo {
+        font-size: 2rem;
+        letter-spacing: 2px;
+    }
+    
+    .periodico-subtitulo {
+        font-size: 1.1rem;
+    }
+    
+    .articulo-periodico {
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .titulo-articulo {
+        font-size: 1.5rem;
+    }
+    
+    .articulo-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .countdown-timer {
+        gap: 15px;
+    }
+    
+    .countdown-number {
+        font-size: 2rem;
+    }
+    
+    .footer-enlaces {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Móviles pequeños (hasta 576px) */
+@media (max-width: 576px) {
+    .periodico-header {
+        padding: 15px;
+    }
+    
+    .periodico-titulo {
+        font-size: 1.8rem;
+    }
+    
+    .articulo-periodico {
+        padding: 15px;
+    }
+    
+    .especificaciones-producto {
+        padding: 15px;
+    }
+    
+    .cita-destacada {
+        padding: 15px;
+        font-size: 1rem;
+    }
+    
+    .imagen-articulo {
+        margin: 15px 0;
+    }
+}
+
+/* Optimización para modo oscuro del sistema */
+@media (prefers-color-scheme: dark) {
+    .periodico-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        color: #e0e0e0;
+    }
+    
+    .articulo-periodico {
+        background: #2d2d2d;
+        color: #e0e0e0;
+    }
+    
+    .titulo-articulo, .articulo-contenido p {
+        color: #e0e0e0;
+    }
+    
+    .pie-imagen {
+        color: #aaa;
+    }
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .articulo-periodico,
+    .imagen-articulo img {
+        transition: none;
+    }
+}
+
+/* Impresión */
+@media print {
+    .barra-lateral,
+    .encabezado,
+    .btn-menu,
+    .btn-signout {
+        display: none;
+    }
+    
+    .contenedor-principal {
+        display: block;
+    }
+    
+    .contenido-principal {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .periodico-container {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}
