@@ -12,5 +12,7 @@
     "lint": "eslint frontend --ext .js,.jsx",
     "format": "prettier --write frontend"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vite": "^8.2.1"
+  }
 }
