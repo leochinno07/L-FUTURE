@@ -63,13 +63,6 @@ function loadScript(src, attrs = {}){
 
 async function loadAll(){
   try{
-    // Si el navegador soporta módulos, importar el shim ESM primero (fallback seguro no-op)
-    try {
-      // Intentar importar el shim ESM; ignorar fallos (navegadores antiguos)
-      await import(/* @vite-ignore */ './editor-shim.mjs');
-    } catch(e){
-      // ignorar - no crítico
-    }
     for(const src of SCRIPTS){
       try{
         await loadScript(src);
