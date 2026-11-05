@@ -72,6 +72,13 @@ class FastAPIV1Tests(unittest.TestCase):
         profile = self.client.get('/api/v1/users/profile', headers=headers)
         self.assertEqual(profile.status_code, 200)
         self.assertEqual(profile.json()['apellido'], 'Future')
+        updated_profile = self.client.put('/api/v1/users/profile', headers=headers, json={
+            'talla_preferida': 'M',
+            'modo_oscuro': False
+        })
+        self.assertEqual(updated_profile.status_code, 200)
+        self.assertEqual(updated_profile.json()['talla_preferida'], 'M')
+        self.assertFalse(updated_profile.json()['modo_oscuro'])
 
         state = {
             'version': 1,
@@ -107,6 +114,19 @@ class FastAPIV1Tests(unittest.TestCase):
         self.assertEqual(project.status_code, 200)
         self.assertEqual(project.json()['project']['design_state'], state)
 
+        original_updated_at = project.json()['project']['updated_at']
+        updated_state = project.json()['project']['design_state']
+        updated_state['escenas'][0]['elementos'][0]['contenido'] = 'Diseño sincronizado'
+        update = self.client.put('/api/v1/projects/{}'.format(project_id), headers=headers, json={
+            'estado_diseno': updated_state
+        })
+        self.assertEqual(update.status_code, 200)
+        self.assertEqual(update.json()['project']['design_state'], updated_state)
+        self.assertNotEqual(update.json()['project']['updated_at'], original_updated_at)
+
+        dashboard = self.client.get('/api/v1/users/dashboard', headers=headers)
+        self.assertEqual(dashboard.json()['recent_designs'][0]['design_state'], updated_state)
+
         image_bytes = b'\x89PNG\r\n\x1a\n' + b'asset-data'
         upload = self.client.post(
             '/api/v1/assets/upload',
@@ -141,6 +161,33 @@ class FastAPIV1Tests(unittest.TestCase):
         self.assertEqual(logout.status_code, 200)
         self.assertEqual(self.client.get('/api/v1/users/profile', headers=headers).status_code, 401)
 
+    def test_password_change_requires_current_password(self):
+        self.client.post('/api/v1/auth/register', json={
+            'username': 'password_user',
+            'password': 'OldPassword123'
+        })
+        login = self.client.post('/api/v1/auth/login', json={
+            'username': 'password_user',
+            'password': 'OldPassword123'
+        })
+        headers = {'Authorization': 'Bearer ' + login.json()['access_token']}
+
+        invalid = self.client.put('/api/v1/users/password', headers=headers, json={
+            'password_actual': 'wrong-password',
+            'password_nueva': 'NewPassword123'
+        })
+        self.assertEqual(invalid.status_code, 400)
+        changed = self.client.put('/api/v1/users/password', headers=headers, json={
+            'password_actual': 'OldPassword123',
+            'password_nueva': 'NewPassword123'
+        })
+        self.assertEqual(changed.status_code, 200)
+        relogin = self.client.post('/api/v1/auth/login', json={
+            'username': 'password_user',
+            'password': 'NewPassword123'
+        })
+        self.assertEqual(relogin.status_code, 200)
+
     def test_invalid_project_state_is_rejected(self):
         response = self.client.post('/api/v1/auth/register', json={
             'username': 'strict_user',
@@ -157,6 +204,7 @@ class FastAPIV1Tests(unittest.TestCase):
             'estado_diseno': {'version': 1, 'escenas': []}
         })
         self.assertEqual(response.status_code, 422)
+        self.assertNotIn('input', str(response.json()))
 
 
 if __name__ == '__main__':

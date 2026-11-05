@@ -3,9 +3,6 @@
 // Proporciona funciones globales para manejar autenticación de usuario usando localStorage y cookies como respaldo.
 
 (function(){
-  const API_BASE = (window.LF_CONFIG && window.LF_CONFIG.API_URL)
-    ? window.LF_CONFIG.API_URL.replace(/\/$/, '')
-    : (location.origin + '/api');
   const API_V1_BASE = (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL)
     ? window.LF_CONFIG.API_V1_URL.replace(/\/$/, '')
     : (location.origin + '/api/v1');
@@ -36,7 +33,7 @@
       const res = await fetch(`${API_V1_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, confirm_password }),
+        body: JSON.stringify({ username, password }),
         credentials: 'same-origin'
       });
       const data = await res.json().catch(()=>null);
@@ -48,7 +45,7 @@
   window.logout = window.logout || (async function(){
     try {
       const token = localStorage.getItem('auth_token');
-      await fetch(`${API_BASE}/logout`, {
+      await fetch(`${API_V1_BASE}/auth/logout`, {
         method: 'POST',
         headers: { 'Authorization': token ? ('Bearer ' + token) : '' },
         credentials: 'same-origin'
@@ -76,6 +73,19 @@
 
   window.getUser = window.getUser || (function(){
     try{ return JSON.parse(localStorage.getItem('user')); }catch(e){ return null; }
+  });
+
+  window.getToken = window.getToken || (function(){
+    try { return localStorage.getItem('auth_token') || ''; } catch(e) { return ''; }
+  });
+
+  window.updateUserNameGlobal = window.updateUserNameGlobal || (function(name){
+    try {
+      const user = window.getUser() || {};
+      user.nombre_completo = name;
+      localStorage.setItem('user', JSON.stringify(user));
+      window.LFUTURE?.updateUserUI?.();
+    } catch(e) { /* local profile cache is optional */ }
   });
 
   window.getAuthHeaders = window.getAuthHeaders || (function(extra = {}) {

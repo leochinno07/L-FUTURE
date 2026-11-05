@@ -88,6 +88,58 @@ const API_BASE = (
   (window.LF_CONFIG && window.LF_CONFIG.API_URL) ||
   (location.origin + '/api')
 ).replace(/\/+$/, '');
+const API_V1_BASE = (
+  (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL) ||
+  (location.origin + '/api/v1')
+).replace(/\/+$/, '');
+
+async function getProyectos() {
+  const response = await fetchWithTimeout(`${API_V1_BASE}/projects`, {
+    headers: getAuthHeaders(),
+    credentials: 'same-origin'
+  });
+  const result = await parseJsonResponse(response);
+  if (!response.ok || !result.success) {
+    return { success: false, data: { message: result.message || 'No se pudieron cargar los proyectos' } };
+  }
+  const proyectos = (result.projects || []).map(project => ({
+    id: project.id,
+    nombre: project.name,
+    descripcion: project.description,
+    estado: project.status,
+    tipo: project.type,
+    tipo_prenda: project.clothing_type,
+    color_prenda: project.garment_color,
+    thumbnail_url: project.preview_url,
+    fecha_creacion: project.created_at,
+    fecha_modificacion: project.updated_at,
+    talla: project.talla
+  }));
+  return { success: true, data: { proyectos } };
+}
+
+async function getElementos(projectId) {
+  const response = await fetchWithTimeout(`${API_V1_BASE}/projects/${projectId}`, {
+    headers: getAuthHeaders(),
+    credentials: 'same-origin'
+  });
+  const result = await parseJsonResponse(response);
+  if (!response.ok || !result.success) {
+    return { success: false, data: { message: result.message || 'No se pudo cargar el diseño' } };
+  }
+  const scenes = result.project?.design_state?.escenas || [];
+  const elementos = scenes.flatMap((scene, sceneIndex) => (scene.elementos || []).map(element => ({
+    ...element,
+    escena: sceneIndex,
+    posicion_x: element.x,
+    posicion_y: element.y,
+    tamano_fuente: element.tamano
+  })));
+  return { success: true, data: { elementos } };
+}
+
+window.getProyectos = window.getProyectos || getProyectos;
+window.getElementos = window.getElementos || getElementos;
 
 window.getAuthToken = window.getAuthToken || getAuthToken;
 window.getAuthHeaders = window.getAuthHeaders || getAuthHeaders;

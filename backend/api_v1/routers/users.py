@@ -7,10 +7,19 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Project, User
-from ..schemas import DashboardResponse, UserProfileUpdate, UserPublic
-from ..security import get_current_user
+from ..schemas import DashboardResponse, PasswordUpdate, UserProfileUpdate, UserPublic
+from ..security import get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix='/users', tags=['users'])
+
+
+@router.put('/password')
+def update_password(payload: PasswordUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(payload.password_actual, user.password_hash):
+        raise HTTPException(status_code=400, detail='La contraseña actual es incorrecta')
+    user.password_hash = hash_password(payload.password_nueva)
+    db.commit()
+    return {'success': True, 'message': 'Contraseña actualizada'}
 
 
 @router.get('/profile', response_model=UserPublic)
@@ -44,12 +53,15 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
             state = None
         recent.append({
             'id': project.id,
+            'name': project.nombre,
             'nombre': project.nombre,
             'descripcion': project.descripcion,
             'preview_url': project.thumbnail,
             'clothing_type': project.tipo_prenda,
+            'garment_color': project.color_prenda,
             'color_prenda': project.color_prenda,
             'updated_at': project.fecha_modificacion.isoformat() if isinstance(project.fecha_modificacion, datetime) else project.fecha_modificacion,
+            'design_state': state,
             'estado_diseno': state
         })
     return {

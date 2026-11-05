@@ -1112,16 +1112,17 @@ async function loadServerProject(projectId){
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/proyectos/${projectId}/estado-diseno`, {
+    const response = await fetch(`${API_BASE_URL}/v1/projects/${projectId}`, {
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
     });
     const result = await response.json().catch(() => null);
-    if (!response.ok || !result || !result.success || !result.estado_diseno) {
+    const designState = result?.project?.design_state;
+    if (!response.ok || !result?.success || !designState) {
       throw new Error(result?.message || 'No se pudo cargar el diseño guardado');
     }
 
-    result.estado_diseno.escenas.forEach((savedScene, index) => {
+    designState.escenas.forEach((savedScene, index) => {
       const sceneState = scenes[index].state;
       sceneState.shirt = Object.assign({}, sceneState.shirt, savedScene.shirt);
       sceneState.elementos = savedScene.elementos;
@@ -1170,25 +1171,26 @@ async function saveProject(){
     const updatingExisting = Boolean(currentProjectId);
     let proyectoId = currentProjectId;
     let projectResponse;
+    const projectState = {
+      nombre: proyectoPayload.nombre,
+      descripcion: proyectoPayload.descripcion,
+      color_prenda: proyectoPayload.color_prenda,
+      clothing_type: scenes[0]?.state?.shirt?.type || 'tshirt',
+      estado_diseno: proyectoPayload.estado_diseno
+    };
     if (proyectoId) {
-      projectResponse = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}`, {
+      projectResponse = await fetch(`${API_BASE_URL}/v1/projects/${proyectoId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
-        body: JSON.stringify({ nombre: proyectoPayload.nombre })
+        body: JSON.stringify(projectState)
       });
     } else {
-      projectResponse = await fetch(`${API_BASE_URL}/proyectos`, {
+      projectResponse = await fetch(`${API_BASE_URL}/v1/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
-        body: JSON.stringify({
-          nombre: proyectoPayload.nombre,
-          descripcion: proyectoPayload.descripcion,
-          color_prenda: proyectoPayload.color_prenda,
-          talla: proyectoPayload.talla,
-          tags: proyectoPayload.tags
-        })
+        body: JSON.stringify(projectState)
       });
     }
 
@@ -1197,21 +1199,10 @@ async function saveProject(){
       throw new Error(projectResult?.message || 'No se pudo guardar el proyecto');
     }
     if (!proyectoId) {
-      proyectoId = projectResult.proyecto_id || projectResult.data?.proyecto_id;
+      proyectoId = projectResult.project?.id;
       if (!proyectoId) throw new Error('El servidor no devolvió el ID del proyecto');
       currentProjectId = proyectoId;
       window.currentProjectId = proyectoId;
-    }
-
-    const stateResponse = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/estado-diseno`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      credentials: 'include',
-      body: JSON.stringify(proyectoPayload.estado_diseno)
-    });
-    const stateResult = await stateResponse.json().catch(() => null);
-    if (!stateResponse.ok || !stateResult || !stateResult.success) {
-      throw new Error(stateResult?.message || 'El servidor no pudo guardar el diseño completo');
     }
 
     try { localStorage.setItem('lf_project_saved', JSON.stringify({ id: proyectoId, ts: Date.now() })); } catch(e){/*ignore*/}

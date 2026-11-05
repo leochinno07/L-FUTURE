@@ -11,6 +11,7 @@ from ..database import BACKEND_DIR, get_db
 from ..models import Asset, ProcessingJob, Project, User
 from ..schemas import ProcessingJobCreate
 from ..security import get_current_user
+from ..storage import delete_remote_asset, public_asset_url, remote_storage_configured, upload_remote_asset
 from backend.uploads import is_valid_image_bytes, safe_name
 
 router = APIRouter(prefix='/assets', tags=['assets'])
@@ -39,7 +40,7 @@ def list_assets(user: User = Depends(get_current_user), db: Session = Depends(ge
     ).all()
     return {'success': True, 'assets': [
         {'id': asset.id, 'filename': asset.filename, 'mime_type': asset.tipo, 'size': asset.tamano,
-         'project_id': asset.proyecto_id, 'file_url': '/uploads/' + asset.filename,
+         'project_id': asset.proyecto_id, 'file_url': public_asset_url(asset.filename),
          'created_at': asset.fecha_subida}
         for asset in assets
     ]}
@@ -65,19 +66,25 @@ async def upload_asset(
         raise HTTPException(status_code=400, detail='El contenido no coincide con el tipo de imagen declarado')
 
     filename = safe_name(user.id, file.filename or 'asset.png')
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    final_path = (UPLOADS_DIR / filename).resolve()
-    if final_path.parent != UPLOADS_DIR:
-        raise HTTPException(status_code=400, detail='Ruta de archivo inválida')
-
+    use_remote_storage = remote_storage_configured()
+    final_path = None
     temporary_path = None
     try:
-        with tempfile.NamedTemporaryFile(dir=UPLOADS_DIR, prefix='.upload-', delete=False) as temporary_file:
-            temporary_path = Path(temporary_file.name)
-            temporary_file.write(content)
-            temporary_file.flush()
-            os.fsync(temporary_file.fileno())
-        os.replace(temporary_path, final_path)
+        if use_remote_storage:
+            upload_remote_asset(filename, content, actual_mime)
+        else:
+            if os.environ.get('APP_ENV', '').lower() == 'production':
+                raise HTTPException(status_code=503, detail='El almacenamiento persistente de assets no está configurado')
+            UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+            final_path = (UPLOADS_DIR / filename).resolve()
+            if final_path.parent != UPLOADS_DIR:
+                raise HTTPException(status_code=400, detail='Ruta de archivo inválida')
+            with tempfile.NamedTemporaryFile(dir=UPLOADS_DIR, prefix='.upload-', delete=False) as temporary_file:
+                temporary_path = Path(temporary_file.name)
+                temporary_file.write(content)
+                temporary_file.flush()
+                os.fsync(temporary_file.fileno())
+            os.replace(temporary_path, final_path)
         asset = Asset(
             usuario_id=user.id,
             proyecto_id=project_id,
@@ -92,7 +99,12 @@ async def upload_asset(
         db.refresh(asset)
     except Exception:
         db.rollback()
-        if final_path.exists():
+        if use_remote_storage:
+            try:
+                delete_remote_asset(filename)
+            except Exception:
+                pass
+        if final_path and final_path.exists():
             final_path.unlink(missing_ok=True)
         raise
     finally:
@@ -100,7 +112,7 @@ async def upload_asset(
             temporary_path.unlink(missing_ok=True)
 
     return {'success': True, 'asset': {'id': asset.id, 'filename': filename, 'mime_type': actual_mime,
-            'size': len(content), 'file_url': '/uploads/' + filename}}
+            'size': len(content), 'file_url': public_asset_url(filename)}}
 
 
 @router.post('/{asset_id}/jobs', status_code=status.HTTP_202_ACCEPTED)

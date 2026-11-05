@@ -8,7 +8,20 @@
 // ============================================================================
 
 async function cargarDatosUsuario() {
-    const user = getUser();
+    let user = getUser();
+    try {
+        const response = await fetch(`${window.API_V1_URL || (location.origin + '/api/v1')}/users/profile`, {
+            headers: getAuthHeaders(),
+            credentials: 'same-origin'
+        });
+        if (response.ok) {
+            user = await response.json();
+            localStorage.setItem('user', JSON.stringify(user));
+            window.LFUTURE?.updateUserUI?.();
+        }
+    } catch (error) {
+        console.warn('Se mostrarán los datos de perfil guardados localmente:', error);
+    }
     
     if (user) {
         // Actualizar campos del perfil
@@ -19,7 +32,7 @@ async function cargarDatosUsuario() {
         const avatarImg = document.querySelectorAll('.user-avatar');
         avatarImg.forEach(img => {
             img.setAttribute('loading', 'lazy');
-            img.src = user.avatar_url || '';
+            img.src = user.foto_perfil || user.avatar_url || '';
             img.onerror = function() {
                 img.style.display = 'none';
                 const initials = document.getElementById('avatar-user');
@@ -93,8 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showSpinner();
             try {
                 const token = getToken();
-                const API_URL = window.API_BASE_URL || (location.origin + '/api');
-                const response = await fetch(`${API_URL}/usuario/password`, {
+                const API_URL = window.API_V1_URL || (location.origin + '/api/v1');
+                const response = await fetch(`${API_URL}/users/password`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -171,8 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showSpinner();
             try {
                 const token = getToken();
-                const API_URL = window.API_BASE_URL || (location.origin + '/api');
-                const response = await fetch(`${API_URL}/usuario/perfil`, {
+                const API_URL = window.API_V1_URL || (location.origin + '/api/v1');
+                const response = await fetch(`${API_URL}/users/profile`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -183,9 +196,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                 });
                 const data = await response.json();
-                if (data.success) {
+                if (response.ok && data.id) {
                     // Actualizar nombre globalmente
                     updateUserNameGlobal(nuevoNombre);
+                    localStorage.setItem('user', JSON.stringify(data));
                     // Actualizar en la vista
                     document.getElementById('nombre-completo-value').textContent = nuevoNombre;
                     Toast.success('Perfil actualizado exitosamente');

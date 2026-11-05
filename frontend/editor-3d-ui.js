@@ -251,16 +251,17 @@ async function loadUserUploads(reset = false) {
 
   uploadsLoading = true;
   try {
-    const response = await fetch(`${window.API_BASE_URL || (location.origin + '/api')}/uploads?page=${uploadsPage}&limit=${UPLOADS_PAGE_SIZE}`, {
+    const response = await fetch(`${window.API_V1_URL || (location.origin + '/api/v1')}/assets`, {
       headers: { Authorization: `Bearer ${token}` },
       credentials: 'include'
     });
     const result = await response.json().catch(() => null);
-    if (!response.ok || !result?.success || !Array.isArray(result.archivos)) {
+    if (!response.ok || !result?.success || !Array.isArray(result.assets)) {
       throw new Error(result?.message || 'No se pudo cargar la biblioteca');
     }
 
-    for (const file of result.archivos) {
+    for (const asset of result.assets) {
+      const file = { ...asset, tamano: asset.size };
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'color-preset small';
@@ -275,7 +276,7 @@ async function loadUserUploads(reset = false) {
       gallery.append(button);
     }
 
-    uploadsHaveMore = result.archivos.length === UPLOADS_PAGE_SIZE;
+    uploadsHaveMore = false;
     uploadsPage += 1;
     document.getElementById('uploads-load-more').hidden = !uploadsHaveMore;
   } catch (error) {
@@ -322,14 +323,15 @@ async function handleImageUpload(event) {
   if (token && window.currentProjectId) {
     try {
       const form = new FormData();
-      form.append('image', file, file.name);
-      const response = await fetch(`${window.API_BASE_URL || (location.origin + '/api')}/proyectos/${window.currentProjectId || 0}/upload-image`, {
+      form.append('file', file, file.name);
+      if (window.currentProjectId) form.append('project_id', String(window.currentProjectId));
+      const response = await fetch(`${window.API_V1_URL || (location.origin + '/api/v1')}/assets/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: form
       });
       const result = await response.json().catch(() => null);
-      if (response.ok && result?.success && result.file_url) url = result.file_url;
+      if (response.ok && result?.success && result.asset?.file_url) url = result.asset.file_url;
     } catch (error) {
       console.warn('Se usará almacenamiento local para esta imagen:', error);
     }

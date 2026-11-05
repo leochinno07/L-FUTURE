@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -27,6 +28,7 @@ def serialize_project(project: Project, include_state: bool = True) -> dict:
         'clothing_type': project.tipo_prenda,
         'base_template_id': project.base_template_id,
         'garment_color': project.color_prenda,
+        'talla': project.talla,
         'preview_url': project.thumbnail,
         'created_at': project.fecha_creacion,
         'updated_at': project.fecha_modificacion,
@@ -106,11 +108,12 @@ def update_project(project_id: int, payload: ProjectUpdate, user: User = Depends
     template_id = values.get('base_template_id')
     if template_id and not db.scalar(select(Template.id).where(Template.id == template_id, Template.active.is_(True))):
         raise HTTPException(status_code=404, detail='Plantilla base no encontrada')
-    if state is not None:
-        project.estado_diseno_json = json.dumps(state.model_dump(mode='json', exclude_unset=True))
+    if 'estado_diseno' in payload.model_fields_set:
+        project.estado_diseno_json = json.dumps(state, ensure_ascii=False, separators=(',', ':')) if state is not None else None
     for key, value in values.items():
         column = {'nombre': 'nombre', 'descripcion': 'descripcion', 'color_prenda': 'color_prenda', 'talla': 'talla', 'clothing_type': 'tipo_prenda', 'base_template_id': 'base_template_id'}[key]
         setattr(project, column, value)
+    project.fecha_modificacion = datetime.now()
     db.commit()
     db.refresh(project)
     return {'success': True, 'project': serialize_project(project)}

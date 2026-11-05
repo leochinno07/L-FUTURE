@@ -61,7 +61,7 @@ class Project(Base):
     base_template_id: Mapped[Optional[int]] = mapped_column(ForeignKey('plantillas_v1.id', ondelete='SET NULL'))
     talla: Mapped[Optional[str]] = mapped_column(String(8))
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
-    fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+    fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
     es_publico: Mapped[bool] = mapped_column(Boolean, default=False, server_default='0')
 
     owner: Mapped[User] = relationship(back_populates='proyectos', foreign_keys=[usuario_id])

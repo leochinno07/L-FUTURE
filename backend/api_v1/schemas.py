@@ -1,5 +1,7 @@
 import re
+import os
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
@@ -40,14 +42,29 @@ class LoginRequest(StrictModel):
     password: str = Field(min_length=1, max_length=72)
 
 
+class PasswordUpdate(StrictModel):
+    password_actual: str = Field(min_length=1, max_length=72)
+    password_nueva: str = Field(min_length=8, max_length=72)
+
+    @field_validator('password_nueva')
+    @classmethod
+    def password_byte_limit(cls, value: str) -> str:
+        if len(value.encode('utf-8')) > 72:
+            raise ValueError('La contraseña excede 72 bytes')
+        return value
+
+
 class UserProfileUpdate(StrictModel):
     nombre_completo: str | None = Field(default=None, max_length=100)
     apellido: str | None = Field(default=None, max_length=80)
     nacionalidad: str | None = Field(default=None, max_length=80)
     edad: int | None = Field(default=None, ge=13, le=120)
     foto_perfil: str | None = Field(default=None, max_length=512)
+    talla_preferida: Literal['S', 'M', 'L', 'XL', 'XXL'] | None = None
     idioma: Literal['es', 'en', 'fr', 'pt'] | None = None
     privacidad: Literal['publico', 'privado', 'amigos'] | None = None
+    modo_oscuro: bool = True
+    notificaciones_activas: bool = True
 
     @model_validator(mode='after')
     def at_least_one_field(self):
@@ -105,7 +122,18 @@ class DesignImage(StrictModel):
     def image_must_be_owned(cls, value: str) -> str:
         inline = value.startswith(('data:image/png;base64,', 'data:image/jpeg;base64,', 'data:image/webp;base64,', 'data:image/gif;base64,'))
         local = value.startswith('/uploads/') and '..' not in value.split('/')
-        if not (inline or local):
+        public_base = os.environ.get('ASSET_PUBLIC_BASE_URL', '').rstrip('/')
+        image_url = urlsplit(value)
+        allowed_base = urlsplit(public_base) if public_base else None
+        remote_asset = bool(
+            allowed_base
+            and allowed_base.scheme == 'https'
+            and image_url.scheme == 'https'
+            and image_url.netloc == allowed_base.netloc
+            and image_url.path.startswith(allowed_base.path.rstrip('/') + '/')
+            and '..' not in image_url.path.split('/')
+        )
+        if not (inline or local or remote_asset):
             raise ValueError('La imagen debe ser propia o una data URL de imagen')
         return value
 
@@ -193,8 +221,12 @@ class UserPublic(BaseModel):
     nacionalidad: str | None
     edad: int | None
     foto_perfil: str | None
+    tipo_usuario: str
+    talla_preferida: str | None
     idioma: str
     privacidad: str
+    modo_oscuro: bool
+    notificaciones_activas: bool
 
 
 class DashboardResponse(BaseModel):

@@ -45,7 +45,7 @@ function makeTexture(canvas) {
   return texture;
 }
 
-function getCanvasPoint(event, canvas, raycaster, camera, surfaces) {
+function getCanvasPoint(event, canvas, raycaster, camera, surfaces, frontCanvas, backCanvas) {
   const rect = canvas.getBoundingClientRect();
   const pointer = new THREE.Vector2(
     ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -56,9 +56,7 @@ function getCanvasPoint(event, canvas, raycaster, camera, surfaces) {
   if (!intersection) return null;
 
   const sceneIndex = intersection.object.userData.sceneIndex;
-  const textureCanvas = sceneIndex === 0
-    ? window.LFUTURE_GarmentSources?.front
-    : window.LFUTURE_GarmentSources?.back;
+  const textureCanvas = sceneIndex === 0 ? frontCanvas : backCanvas;
   if (!textureCanvas) return null;
 
   const uv = intersection.uv;
@@ -193,7 +191,7 @@ export function createGarmentPreview({ canvas, frontCanvas, backCanvas, getScene
   }
 
   function pickElement(event) {
-    const point = getCanvasPoint(event, canvas, raycaster, camera, surfaces);
+    const point = getCanvasPoint(event, canvas, raycaster, camera, surfaces, frontCanvas, backCanvas);
     if (!point) return null;
     const scenes = getScenes?.() || [];
     const state = scenes[point.sceneIndex]?.state;
@@ -238,7 +236,7 @@ export function createGarmentPreview({ canvas, frontCanvas, backCanvas, getScene
     if (!dragState) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    pendingDragPoint = getCanvasPoint(event, canvas, raycaster, camera, surfaces);
+    pendingDragPoint = getCanvasPoint(event, canvas, raycaster, camera, surfaces, frontCanvas, backCanvas);
     if (!dragFrame) dragFrame = requestAnimationFrame(applyPendingDragPoint);
   }, true);
 

@@ -1,7 +1,7 @@
 import os
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -35,9 +35,20 @@ app.include_router(orders.router, prefix='/api/v1')
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(_request: Request, error: RequestValidationError):
+    errors = [{key: value for key, value in item.items() if key != 'input'} for item in error.errors()]
     return JSONResponse(
         status_code=422,
-        content={'success': False, 'message': 'Datos de entrada inválidos', 'errors': jsonable_encoder(error.errors())}
+        content={'success': False, 'message': 'Datos de entrada inválidos', 'errors': jsonable_encoder(errors)}
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_error_handler(_request: Request, error: HTTPException):
+    message = error.detail if isinstance(error.detail, str) else 'Solicitud rechazada'
+    return JSONResponse(
+        status_code=error.status_code,
+        content={'success': False, 'message': message, 'detail': jsonable_encoder(error.detail)},
+        headers=error.headers
     )
 
 
