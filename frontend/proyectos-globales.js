@@ -16,7 +16,7 @@ async function cargarProyectosGlobales() {
 
     try {
         // Llamar al endpoint sin autenticación
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+        const API_BASE_URL = window.API_BASE_URL || (location.origin + '/api');
         const response = await fetch(`${API_BASE_URL}/proyectos/globales`);
         const resultado = await response.json();
 
@@ -194,7 +194,7 @@ async function personalizarProyectoGlobal(proyectoId, nombreOriginal) {
     }
 
     try {
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+        const API_BASE_URL = window.API_BASE_URL || (location.origin + '/api');
         const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/duplicar`, {
             method: 'POST',
             headers: {
@@ -278,7 +278,7 @@ function abrirFormularioProyectoGlobal() {
  */
 async function crearProyectoGlobal(nombre, descripcion, color) {
     try {
-        const API = (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : 'https://api.l-future.com/api');
+        const API = window.API_BASE_URL || (location.origin + '/api');
         const token = localStorage.getItem('auth_token');
         const res = await fetch(`${API}/proyectos`, {
             method: 'POST',
@@ -314,14 +314,22 @@ function promptToUploadThumbnail(proyectoId){
     input.onchange = async function(e){
         const f = e.target.files[0];
         if(!f) return;
-        const form = new FormData();
-        form.append('thumbnail', f);
-        const API = (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : 'https://api.l-future.com/api');
+        if (f.size > 5 * 1024 * 1024) {
+            (window.Toast && window.Toast.error) ? window.Toast.error('El thumbnail supera el límite de 5 MB') : alert('El thumbnail supera el límite de 5 MB');
+            return;
+        }
+        const API = window.API_BASE_URL || (location.origin + '/api');
         try{
+            const thumbnail = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(f);
+            });
             const res = await fetch(`${API}/proyectos/${proyectoId}/thumbnail`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: form
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ thumbnail })
             });
             const json = await res.json();
             if(json && json.success){

@@ -83,11 +83,11 @@ async function postJson(url, body, retries = 1) {
   }
 }
 
-const API_BASE = (window.LF_CONFIG && window.LF_CONFIG.API_URL)
-  ? window.LF_CONFIG.API_URL.replace(/\/$/, '')
-  : (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-    ? (location.origin + '/api')
-    : 'https://api.l-future.com/api';
+const API_BASE = (
+  window.API_BASE_URL ||
+  (window.LF_CONFIG && window.LF_CONFIG.API_URL) ||
+  (location.origin + '/api')
+).replace(/\/+$/, '');
 
 window.getAuthToken = window.getAuthToken || getAuthToken;
 window.getAuthHeaders = window.getAuthHeaders || getAuthHeaders;

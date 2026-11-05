@@ -283,22 +283,19 @@ def register():
     Acepta datos JSON o form-encoded.
     En modo desarrollo permite registro simplificado.
     """
-    # Debug: log de la request entrante para troubleshooting más fácil durante dev
-    try:
-        raw = request.get_data(as_text=True)
-        print('[DEBUG] /api/register raw body:', raw)
-    except Exception:
-        pass
-
     # Aceptar datos JSON o form-encoded para simplicidad
     data = request.get_json(silent=True) or request.form.to_dict() or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
     username = data.get('username')
     password = data.get('password')
     confirm = data.get('confirm_password')
 
-    # Validación mínima de datos requeridos (simplificada en modo dev)
-    if not username or not password:
+    if not isinstance(username, str) or not isinstance(password, str) or not username.strip() or not password:
         return jsonify({'success': False, 'message': 'Faltan datos requeridos'}), 400
+    username = username.strip()
+    if len(username) > 64 or len(password.encode('utf-8')) > 72:
+        return jsonify({'success': False, 'message': 'Username o contraseña exceden el límite permitido'}), 400
 
     # En modo desarrollo no requerimos confirm_password estrictamente
     if not DEV_MODE and password != confirm:
@@ -339,34 +336,20 @@ def login():
     Acepta datos JSON o form-encoded.
     En modo desarrollo permite auto-registro por conveniencia.
     """
-    # Debug: log de la request entrante para troubleshooting más fácil durante dev
-    try:
-        raw = request.get_data(as_text=True)
-        print('[DEBUG] /api/login raw body:', raw)
-    except Exception:
-        pass
-
     # Aceptar datos JSON o form-encoded
     data = request.get_json(silent=True) or request.form.to_dict() or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
     username = data.get('username')
     password = data.get('password')
 
-    if not username or not password:
+    if not isinstance(username, str) or not isinstance(password, str) or not username or not password:
         return jsonify({'success': False, 'message': 'Faltan datos'}), 400
+    if len(password.encode('utf-8')) > 72:
+        return jsonify({'success': False, 'message': 'Usuario o contraseña incorrectos'}), 401
 
     with Database() as db:
         user = db.obtener_usuario_por_username(username)
-
-        # Si el usuario no existe y estamos en DEV_MODE, auto-crear el usuario por conveniencia
-        if not user and DEV_MODE:
-            try:
-                ph = hash_password(password)
-                uid = db.insertar_usuario(username, ph)
-                if uid:
-                    print('[DEV] Auto-registered user:', username)
-                    user = db.obtener_usuario_por_username(username)
-            except Exception as e:
-                print('[DEV ERROR] could not auto-register user:', e)
 
         # Validar que existe el usuario
         if not user:
@@ -458,6 +441,106 @@ def receive_logs():
         print('[FRONTEND LOG] error parsing log:', e)
     return jsonify({'success': True}), 200
 
+@APP.route('/api/uploads', methods=['GET'])
+@token_required
+def listar_uploads_usuario():
+    try:
+        pagina = int(request.args.get('page', '1'))
+        limite = int(request.args.get('limit', '24'))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Paginación inválida'}), 400
+    if pagina < 1 or not 1 <= limite <= 50:
+        return jsonify({'success': False, 'message': 'Paginación fuera de rango'}), 400
+
+    with Database() as db:
+        archivos = db.obtener_archivos_activos_por_usuario(request.usuario_id, pagina, limite)
+
+    for archivo in archivos:
+        filename = archivo.get('filename', '')
+        if archivo.get('proyecto_id') and filename.startswith('proyecto_'):
+            archivo['file_url'] = '/uploads/user_{}/{}'.format(request.usuario_id, filename)
+        else:
+            archivo['file_url'] = '/uploads/{}'.format(filename)
+        archivo.pop('hash', None)
+
+    return jsonify({'success': True, 'archivos': archivos, 'page': pagina, 'limit': limite}), 200
+
+@APP.route('/api/usuario/perfil', methods=['PUT'])
+@token_required
+def actualizar_perfil_usuario():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
+
+    nombre_completo = data.get('nombre_completo')
+    if not isinstance(nombre_completo, str) or not nombre_completo.strip() or len(nombre_completo.strip()) > 100:
+        return jsonify({'success': False, 'message': 'Nombre completo inválido'}), 400
+
+    with Database() as db:
+        if not db.actualizar_usuario_perfil(request.usuario_id, nombre_completo=nombre_completo.strip()):
+            return jsonify({'success': False, 'message': 'No se pudo actualizar el perfil'}), 404
+
+    return jsonify({'success': True, 'message': 'Perfil actualizado'})
+
+@APP.route('/api/usuario/password', methods=['PUT'])
+@token_required
+def actualizar_password_usuario():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
+
+    password_actual = data.get('password_actual')
+    password_nueva = data.get('password_nueva')
+    if not isinstance(password_actual, str) or not isinstance(password_nueva, str):
+        return jsonify({'success': False, 'message': 'Contraseñas inválidas'}), 400
+    if len(password_nueva) < config.PASSWORD_MIN_LENGTH or len(password_nueva.encode('utf-8')) > 72:
+        return jsonify({'success': False, 'message': 'La nueva contraseña no cumple los límites permitidos'}), 400
+    if not DEV_MODE:
+        is_valid, error_msg = validate_password_strength(password_nueva)
+        if not is_valid:
+            return jsonify({'success': False, 'message': error_msg}), 400
+
+    with Database() as db:
+        usuario = db.obtener_usuario_por_id(request.usuario_id)
+        if not usuario:
+            return jsonify({'success': False, 'message': 'Usuario no encontrado'}), 404
+        if not verify_password(password_actual, usuario.get('password_hash', '')):
+            return jsonify({'success': False, 'message': 'La contraseña actual es incorrecta'}), 401
+        if not db.actualizar_usuario(request.usuario_id, password_hash=hash_password(password_nueva)):
+            return jsonify({'success': False, 'message': 'No se pudo actualizar la contraseña'}), 500
+
+    return jsonify({'success': True, 'message': 'Contraseña actualizada'})
+
+@APP.route('/api/proyectos/<int:proyecto_id>/duplicar', methods=['POST'])
+@token_required
+def duplicar_proyecto(proyecto_id):
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
+
+    with Database() as db:
+        db.cursor.execute('SELECT usuario_id, nombre, tipo FROM proyectos WHERE id = ?', (proyecto_id,))
+        proyecto = db.cursor.fetchone()
+        if not proyecto:
+            return jsonify({'success': False, 'message': 'Proyecto no encontrado'}), 404
+        if proyecto['tipo'] != 'global' and proyecto['usuario_id'] != request.usuario_id:
+            return jsonify({'success': False, 'message': 'Proyecto no encontrado'}), 404
+
+        nombre = data.get('nombre') or '{} (copia)'.format(proyecto['nombre'])
+        if not isinstance(nombre, str) or not nombre.strip() or len(nombre.strip()) > 100:
+            return jsonify({'success': False, 'message': 'Nombre de copia inválido'}), 400
+        nuevo_proyecto_id = db.duplicar_proyecto_para_usuario(
+            proyecto_id,
+            request.usuario_id,
+            nombre.strip()
+        )
+
+    if not nuevo_proyecto_id:
+        return jsonify({'success': False, 'message': 'No se pudo duplicar el proyecto'}), 500
+    return jsonify({'success': True, 'proyecto_id': nuevo_proyecto_id}), 201
+
 @APP.route('/api/proyectos', methods=['GET', 'POST'])
 def proyectos_collection():
     """
@@ -484,7 +567,9 @@ def proyectos_collection():
         return jsonify({'success': True, 'proyectos': proyectos})
 
     # POST -> create proyecto
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
     nombre = data.get('nombre')
     if not nombre:
         return jsonify({'success': False, 'message': 'Nombre requerido'}), 400
@@ -525,7 +610,9 @@ def proyecto_item(proyecto_id):
                 return jsonify({'success': False, 'message': 'Error al eliminar proyecto'}), 500
 
     # PUT -> metadata update (whitelist)
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
     with Database() as db:
         resultado = db.actualizar_proyecto_seguro(proyecto_id, usuario_id, **data)
         if resultado:
@@ -548,7 +635,9 @@ def elementos_proyecto(proyecto_id):
             return jsonify({'success': True, 'elementos': elementos})
 
         if request.method == 'POST':
-            data = request.get_json() or {}
+            data = request.get_json(silent=True)
+            if not isinstance(data, dict):
+                return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
             tipo = data.get('tipo') or 'detalle'
             contenido = data.get('contenido') or ''
             posicion_x = data.get('posicion_x', 0)
@@ -563,7 +652,9 @@ def elementos_proyecto(proyecto_id):
                 return jsonify({'success': False, 'message': 'Error al agregar elemento'}), 500
 
         # PUT -> replace full elementos list
-        data = request.get_json() or {}
+        data = request.get_json(silent=True)
+        if data is None:
+            return jsonify({'success': False, 'message': 'Se esperaba JSON válido'}), 400
         elementos = None
         if isinstance(data, dict) and 'elementos' in data:
             elementos = data['elementos']
@@ -609,7 +700,10 @@ def elementos_proyecto(proyecto_id):
             return True, None
 
         # Validate all elements
-        for idx, el in enumerate(elementos or []):
+        if not isinstance(elementos, list) or len(elementos) > 1000:
+            return jsonify({'success': False, 'message': 'Elementos debe ser una lista de hasta 1000 elementos'}), 400
+
+        for idx, el in enumerate(elementos):
             ok, msg = validate_element(el)
             if not ok:
                 return jsonify({'success': False, 'message': 'Elemento[{}] invalido: {}'.format(idx, msg)}), 400
@@ -627,6 +721,108 @@ def elementos_proyecto(proyecto_id):
             return jsonify({'success': False, 'message': 'Operación no soportada en DB'}), 500
 
 
+@APP.route('/api/proyectos/<int:proyecto_id>/estado-diseno', methods=['GET', 'PUT'])
+@token_required
+def estado_diseno_proyecto(proyecto_id):
+    with Database() as db:
+        if not db.existe_proyecto_de_usuario(proyecto_id, request.usuario_id):
+            return jsonify({'success': False, 'message': 'Proyecto no encontrado o no autorizado'}), 404
+
+        if request.method == 'GET':
+            estado = db.obtener_estado_diseno_proyecto(proyecto_id, request.usuario_id)
+            return jsonify({'success': True, 'estado_diseno': estado}), 200
+
+        if request.content_length and request.content_length > 12 * 1024 * 1024:
+            return jsonify({'success': False, 'message': 'El estado del diseño excede el límite de 12 MB'}), 413
+
+        estado = request.get_json(silent=True)
+        if not isinstance(estado, dict) or type(estado.get('version')) is not int or estado['version'] != 1:
+            return jsonify({'success': False, 'message': 'Estado de diseño inválido'}), 400
+        escenas = estado.get('escenas')
+        if not isinstance(escenas, list) or len(escenas) != 2:
+            return jsonify({'success': False, 'message': 'El diseño debe incluir las dos escenas'}), 400
+
+        for index, escena in enumerate(escenas):
+            if not isinstance(escena, dict) or not isinstance(escena.get('name'), str) or len(escena['name']) > 32:
+                return jsonify({'success': False, 'message': 'Nombre de escena inválido'}), 400
+
+            prenda = escena.get('shirt')
+            if not isinstance(prenda, dict):
+                return jsonify({'success': False, 'message': 'Datos de prenda inválidos'}), 400
+            color = prenda.get('color')
+            if (not isinstance(color, str) or len(color) not in (4, 7) or not color.startswith('#')
+                    or not all(char in '0123456789abcdefABCDEF' for char in color[1:])):
+                return jsonify({'success': False, 'message': 'Color de prenda inválido'}), 400
+            if prenda.get('type') not in ('tshirt', 'sweater', 'polo', 'crop-top'):
+                return jsonify({'success': False, 'message': 'Tipo de prenda inválido'}), 400
+            if prenda.get('view') not in ('front', 'back'):
+                return jsonify({'success': False, 'message': 'Vista de prenda inválida'}), 400
+
+            elementos = escena.get('elementos')
+            if not isinstance(elementos, list) or len(elementos) > 500:
+                return jsonify({'success': False, 'message': 'Cada escena admite hasta 500 elementos'}), 400
+            for elemento in elementos:
+                if not isinstance(elemento, dict) or elemento.get('tipo') not in ('texto', 'logo', 'img', 'imagen', 'detalle', 'insignia', 'forma', 'stroke'):
+                    return jsonify({'success': False, 'message': 'Elemento de diseño inválido'}), 400
+                contenido = elemento.get('contenido', '')
+                if not isinstance(contenido, str) or len(contenido) > 2000:
+                    return jsonify({'success': False, 'message': 'Contenido de elemento inválido'}), 400
+                if elemento['tipo'] == 'forma' and elemento.get('forma') not in ('circle', 'triangle', 'star', 'diamond'):
+                    return jsonify({'success': False, 'message': 'Forma no admitida'}), 400
+                if elemento['tipo'] == 'stroke':
+                    points = elemento.get('points')
+                    if not isinstance(points, list) or not 2 <= len(points) <= 2000:
+                        return jsonify({'success': False, 'message': 'Trazo inválido'}), 400
+                    for point in points:
+                        if not isinstance(point, dict):
+                            return jsonify({'success': False, 'message': 'Punto de trazo inválido'}), 400
+                        try:
+                            point_x, point_y = float(point.get('x')), float(point.get('y'))
+                        except (TypeError, ValueError):
+                            return jsonify({'success': False, 'message': 'Punto de trazo inválido'}), 400
+                        if not -2000 <= point_x <= 2000 or not -2000 <= point_y <= 2000:
+                            return jsonify({'success': False, 'message': 'Punto de trazo fuera de rango'}), 400
+                for key, limit in (('x', 2000), ('y', 2000), ('posicion_x', 2000), ('posicion_y', 2000), ('rotacion', 360), ('rotation', 360)):
+                    if key in elemento:
+                        try:
+                            value = float(elemento[key])
+                        except (TypeError, ValueError):
+                            return jsonify({'success': False, 'message': 'Posición o rotación inválida'}), 400
+                        if not -limit <= value <= limit:
+                            return jsonify({'success': False, 'message': 'Posición o rotación fuera de rango'}), 400
+                for key, minimum, maximum in (
+                    ('escala', 0.01, 10000), ('scale', 0.01, 10000),
+                    ('opacidad', 0, 100), ('opacity', 0, 100),
+                    ('tamano', 1, 500), ('tamano_fuente', 1, 500), ('size', 1, 500),
+                    ('espaciado', -5, 20), ('lineHeight', 0.5, 3), ('cornerRadius', 0, 55)
+                ):
+                    if key in elemento:
+                        try:
+                            value = float(elemento[key])
+                        except (TypeError, ValueError):
+                            return jsonify({'success': False, 'message': 'Escala, opacidad o tamaño inválido'}), 400
+                        if not minimum <= value <= maximum:
+                            return jsonify({'success': False, 'message': 'Escala, opacidad o tamaño fuera de rango'}), 400
+
+            imagenes = escena.get('imglist')
+            if not isinstance(imagenes, list) or len(imagenes) > 100:
+                return jsonify({'success': False, 'message': 'Cada escena admite hasta 100 imágenes'}), 400
+            for imagen in imagenes:
+                if (not isinstance(imagen, dict) or not isinstance(imagen.get('url'), str)
+                        or len(imagen['url']) > 8 * 1024 * 1024):
+                    return jsonify({'success': False, 'message': 'Imagen de diseño inválida'}), 400
+                image_url = imagen['url']
+                is_local_upload = image_url.startswith('/uploads/') and '..' not in image_url.split('/')
+                is_inline_image = image_url.startswith(('data:image/png;base64,', 'data:image/jpeg;base64,', 'data:image/webp;base64,', 'data:image/gif;base64,'))
+                if not (is_local_upload or is_inline_image):
+                    return jsonify({'success': False, 'message': 'La imagen debe ser propia o una data URL de imagen'}), 400
+
+        if not db.guardar_estado_diseno_proyecto(proyecto_id, request.usuario_id, estado):
+            return jsonify({'success': False, 'message': 'No se pudo guardar el diseño'}), 500
+
+    return jsonify({'success': True, 'message': 'Diseño guardado'}), 200
+
+
 @APP.route('/api/proyectos/<int:proyecto_id>/thumbnail', methods=['POST'])
 @token_required
 def proyecto_thumbnail(proyecto_id):
@@ -635,7 +831,9 @@ def proyecto_thumbnail(proyecto_id):
     if not usuario_id:
         return jsonify({'success': False, 'message': 'No autenticado'}), 401
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'message': 'Se esperaba un objeto JSON'}), 400
     thumbnail = data.get('thumbnail')
     metadata = data.get('metadata') or {}
     if not thumbnail or not isinstance(thumbnail, str) or not thumbnail.startswith('data:image/'):
@@ -654,6 +852,9 @@ def proyecto_thumbnail(proyecto_id):
         img_bytes = base64.b64decode(b64)
     except Exception as e:
         return jsonify({'success': False, 'message': 'Formato de thumbnail inválido', 'detail': str(e)}), 400
+
+    if len(img_bytes) > uploads.MAX_FILE_SIZE:
+        return jsonify({'success': False, 'message': 'Thumbnail excede el límite de 5 MB'}), 413
 
     # Validate image bytes
     if not uploads.is_valid_image_bytes(img_bytes):
@@ -711,6 +912,9 @@ def serve_uploads(filename):
 @APP.route('/', defaults={'path': ''})
 @APP.route('/<path:path>')
 def serve_frontend(path):
+    if not path:
+        path = 'index.html'
+
     # Prevent accidental overlap with API routes.
     # Only treat requests that are exactly 'api' or start with 'api/' as API calls.
     # This avoids blocking static filenames like 'api.js' or 'api.css'.
@@ -740,7 +944,7 @@ def serve_frontend(path):
         # If a specific HTML file is requested (other than public login/register), optionally protect it
         if path.lower().endswith('.html'):
             # Allow public pages without auth
-            public_pages = ('login.html', 'register.html', 'politica de privacidad.html', 'sobre nosotros.html')
+            public_pages = ('index.html', 'login.html', 'register.html', 'politica de privacidad.html', 'sobre nosotros.html')
             if os.path.basename(path).lower() not in public_pages:
                 auth_header = request.headers.get('Authorization', '')
                 usuario_id = verify_token(auth_header)
@@ -813,6 +1017,12 @@ def upload_image(proyecto_id):
                 'success': False,
                 'message': 'Archivo excede tamaño máximo de 5MB. Tamaño actual: {:.2f}MB'.format(len(file_content) / (1024*1024))
             }), 413
+
+        if not uploads.is_valid_image_bytes(file_content):
+            return jsonify({
+                'success': False,
+                'message': 'El contenido no coincide con un formato de imagen permitido'
+            }), 400
 
         # Procesar imagen con Pillow (redimensionar, comprimir)
         try:

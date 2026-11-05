@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 from datetime import datetime
 import logging
 
@@ -85,6 +86,7 @@ class Database:
             tipo TEXT DEFAULT 'personal' CHECK(tipo IN ('personal', 'global')),
             color_prenda TEXT DEFAULT '#FFFFFF',
             thumbnail TEXT,
+            estado_diseno_json TEXT,
             talla TEXT CHECK(talla IN ('S', 'M', 'L', 'XL', 'XXL')),
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -173,6 +175,10 @@ class Database:
                     self.cursor.execute("ALTER TABLE proyectos ADD COLUMN thumbnail TEXT")
                     self.connection.commit()
                     print("[OK] Columna 'thumbnail' añadida a proyectos")
+                if 'estado_diseno_json' not in cols:
+                    self.cursor.execute("ALTER TABLE proyectos ADD COLUMN estado_diseno_json TEXT")
+                    self.connection.commit()
+                    print("[OK] Columna 'estado_diseno_json' añadida a proyectos")
             except Exception:
                 pass
             return True
@@ -395,6 +401,41 @@ class Database:
             return True
         except sqlite3.Error as e:
             print("[ERROR] Error reemplazando elementos del proyecto: " + str(e))
+            return False
+
+    def obtener_estado_diseno_proyecto(self, proyecto_id, usuario_id):
+        """Devuelve el estado JSON del personalizador para un proyecto propio."""
+        try:
+            self.cursor.execute(
+                "SELECT estado_diseno_json FROM proyectos WHERE id = ? AND usuario_id = ?",
+                (proyecto_id, usuario_id)
+            )
+            row = self.cursor.fetchone()
+            if not row or not row['estado_diseno_json']:
+                return None
+            return json.loads(row['estado_diseno_json'])
+        except (sqlite3.Error, json.JSONDecodeError) as e:
+            print("[ERROR] Error al leer el estado del diseño: " + str(e))
+            return None
+
+    def guardar_estado_diseno_proyecto(self, proyecto_id, usuario_id, estado_diseno):
+        """Guarda el estado completo del personalizador solo en un proyecto propio."""
+        try:
+            serialized_state = json.dumps(
+                estado_diseno,
+                ensure_ascii=False,
+                separators=(',', ':'),
+                allow_nan=False
+            )
+            self.cursor.execute(
+                "UPDATE proyectos SET estado_diseno_json = ?, fecha_modificacion = ? WHERE id = ? AND usuario_id = ?",
+                (serialized_state, datetime.now().isoformat(), proyecto_id, usuario_id)
+            )
+            self.connection.commit()
+            return self.cursor.rowcount == 1
+        except (sqlite3.Error, TypeError, ValueError) as e:
+            print("[ERROR] Error al guardar el estado del diseño: " + str(e))
+            self.connection.rollback()
             return False
 
     def actualizar_proyecto(self, proyecto_id, **campos):
@@ -697,6 +738,27 @@ class Database:
             logging.error("Error validando hash: {}".format(str(e)))
             return False
 
+    def obtener_archivos_activos_por_usuario(self, usuario_id, pagina=1, limite=10):
+        """
+        Obtiene una lista paginada de archivos activos subidos por un usuario.
+
+        Args:
+            usuario_id: ID del usuario cuyas archivos se desean obtener.
+            pagina: Número de página para la paginación.
+            limite: Número de archivos por página.
+
+        Returns:
+            Lista de archivos activos del usuario.
+        """
+        offset = (pagina - 1) * limite
+        query = "SELECT * FROM archivos WHERE usuario_id = ? AND estado = 'activo' ORDER BY fecha_subida DESC, id DESC LIMIT ? OFFSET ?"
+        try:
+            self.cursor.execute(query, (usuario_id, limite, offset))
+            resultados = self.cursor.fetchall()
+            return [dict(row) for row in resultados]
+        except sqlite3.Error as e:
+            logging.error("[ERROR] Error al obtener archivos activos: " + str(e))
+            return []
     def duplicar_proyecto_para_usuario(self, proyecto_original_id, nuevo_usuario_id, nuevo_nombre):
         """
         Duplica un proyecto existente para un usuario específico.
@@ -733,6 +795,12 @@ class Database:
             # 3. Copiar todos los elementos de diseño
             elementos_originales = self.obtener_elementos_proyecto(proyecto_original_id)
             self.reemplazar_elementos_proyecto(nuevo_proyecto_id, elementos_originales)
+            if proyecto_original['estado_diseno_json']:
+                self.cursor.execute(
+                    "UPDATE proyectos SET estado_diseno_json = ? WHERE id = ?",
+                    (proyecto_original['estado_diseno_json'], nuevo_proyecto_id)
+                )
+                self.connection.commit()
 
             return nuevo_proyecto_id
         except sqlite3.Error as e:

@@ -66,7 +66,7 @@ async function loadAll(){
     // Si el navegador soporta módulos, importar el shim ESM primero (fallback seguro no-op)
     try {
       // Intentar importar el shim ESM; ignorar fallos (navegadores antiguos)
-      await import('./editor-shim.mjs');
+      await import(/* @vite-ignore */ './editor-shim.mjs');
     } catch(e){
       // ignorar - no crítico
     }

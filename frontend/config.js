@@ -11,13 +11,14 @@
 /**
  * URL base del backend API
  * 
- * DESARROLLO: 'http://localhost:5000/api'
- * PRODUCCIÓN: Cambiar a la URL de tu servidor (ej: 'https://api.l-future.com/api')
+ * Por defecto la API comparte origen con el frontend. Para despliegues separados,
+ * define window.LF_API_BASE_URL antes de cargar este archivo.
  */
-// Use same-origin API when frontend is served by the backend (recommended).
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? (window.location.origin + '/api')
-    : 'https://api.l-future.com/api'; // ⚡️ PRODUCCIÓN: URL REAL
+const API_BASE_URL = (
+    window.LF_API_BASE_URL ||
+    window.API_BASE_URL ||
+    `${window.location.origin}/api`
+).replace(/\/+$/, '');
 
 /**
  * Detecta automáticamente si estamos en producción
@@ -53,6 +54,7 @@ const CONFIG = {
 // Exportar configuración
 window.CONFIG = CONFIG;
 window.LF_CONFIG = CONFIG;
+window.API_BASE_URL = API_BASE_URL;
 
 // Función para obtener la URL de la API
 window.getApiUrl = function(path = '') {
@@ -67,7 +69,4 @@ if (CONFIG.ENABLE_LOGS) {
         Modo: CONFIG.IS_PRODUCTION ? 'PRODUCCIÓN' : 'DESARROLLO',
         Version: CONFIG.VERSION
     });
-}
-if (CONFIG.IS_PRODUCTION && CONFIG.API_URL.includes('tu-backend-en-produccion')) {
-    console.warn('⚠️ [L-FUTURE] La URL de producción no está configurada correctamente. Actualiza config.js con la URL real de tu backend.');
 }

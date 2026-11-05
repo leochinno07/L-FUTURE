@@ -7,7 +7,7 @@ if('serviceWorker' in navigator){
     console.debug('Skipping service worker registration on local host:', host);
   } else {
     window.addEventListener('load', function(){
-      navigator.serviceWorker.register('./sw-unified.js').then(reg => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
       console.log('ServiceWorker registered: ', reg.scope);
       // listen for updates
       reg.onupdatefound = () => {

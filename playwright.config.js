@@ -5,7 +5,7 @@ module.exports = defineConfig({
   testDir: 'tests/e2e',
   timeout: 60_000,
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173',
     headless: true,
     viewport: { width: 1280, height: 800 },
     ignoreHTTPSErrors: true,

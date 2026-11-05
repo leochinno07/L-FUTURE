@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showSpinner();
             try {
                 const token = getToken();
-                const API_URL = window.CONFIG ? window.CONFIG.API_URL : 'http://localhost:5000/api';
+                const API_URL = window.API_BASE_URL || (location.origin + '/api');
                 const response = await fetch(`${API_URL}/usuario/password`, {
                     method: 'PUT',
                     headers: {
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showSpinner();
             try {
                 const token = getToken();
-                const API_URL = window.CONFIG ? window.CONFIG.API_URL : 'http://localhost:5000/api';
+                const API_URL = window.API_BASE_URL || (location.origin + '/api');
                 const response = await fetch(`${API_URL}/usuario/perfil`, {
                     method: 'PUT',
                     headers: {

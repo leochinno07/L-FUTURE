@@ -1,93 +1,123 @@
-/**
- * sw.js - Service Worker para L-FUTURE
- * Implementación de la Optimización Básica #7: Modo Offline
- */
-
-const CACHE_NAME = 'l-future-cache-v1';
-const API_CACHE_NAME = 'l-future-api-cache-v1';
-
-// Lista de archivos estáticos para cachear en la instalación
-const STATIC_ASSETS = [
+const STATIC_CACHE = 'lfuture-static-v2';
+const API_CACHE = 'lfuture-api-v2';
+const PUBLIC_NAVIGATION_PATHS = new Set([
     '/',
-    'inicio.html',
-    'diseños1.0.html',
-    'diseños L-Future.html',
-    'diseños-3d.html',
-    'diseños-3d.js',
-    'perfil.html',
-    'sobre nosotros.html',
-    'global.css',
-    'diseños1.0.css',
-    'config.js',
-    'auth.js',
-    'diseños1.0.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://cdn.jsdelivr.net/npm/izitoast/dist/css/iziToast.min.css',
-    'https://cdn.jsdelivr.net/npm/izitoast/dist/js/iziToast.min.js'
+    '/index.html',
+    '/login.html',
+    '/register.html',
+    '/politica de privacidad.html',
+    '/sobre nosotros.html'
+]);
+const PRECACHE_URLS = [
+    './index.html',
+    './login.html',
+    './register.html',
+    './manifest.json',
+    './assets/icon.svg',
+    './global.css',
+    './login y register.css',
+    './auth.js',
+    './api.js',
+    './config.js',
+    './register-sw.js',
+    './toast.js',
+    './editor-3d-core.js',
+    './engines/editor-3d-bootstrap.js',
+    './engines/editor-3d-core.js',
+    './engines/editor-3d-transform.js',
+    './engines/editor-3d-ui-bridge.js',
+    './engines/render-manager.js',
+    './engines/scene-manager.js',
+    './engines/three-engine.js',
+    './engines/viewport-controls.js'
 ];
+const PUBLIC_API_PATHS = new Set(['/api/health', '/api/proyectos/globales']);
 
-// Evento de instalación: cachear los assets estáticos
 self.addEventListener('install', event => {
-    console.log('[Service Worker] Instalando...');
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('[Service Worker] Cacheando assets estáticos');
-                return cache.addAll(STATIC_ASSETS);
-            })
+        caches.open(STATIC_CACHE)
+            .then(cache => cache.addAll(PRECACHE_URLS))
+            .then(() => self.skipWaiting())
     );
 });
 
-// Evento de activación: limpiar cachés antiguos
 self.addEventListener('activate', event => {
-    console.log('[Service Worker] Activando...');
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
-                        console.log('[Service Worker] Borrando caché antiguo:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
+        caches.keys()
+            .then(keys => Promise.all(keys
+                .filter(key => key.startsWith('lfuture-') && key !== STATIC_CACHE && key !== API_CACHE)
+                .map(key => caches.delete(key))))
+            .then(() => self.clients.claim())
     );
 });
 
-// Evento fetch: interceptar peticiones y servir desde caché si es posible
+function isCacheableApiRequest(request, url, response) {
+    const cacheControl = response.headers.get('Cache-Control') || '';
+    return request.method === 'GET'
+        && PUBLIC_API_PATHS.has(url.pathname)
+        && !request.headers.has('Authorization')
+        && response.status === 200
+        && !/private|no-store/i.test(cacheControl)
+        && !response.headers.has('Set-Cookie');
+}
+
+function isStaticRequest(request, url) {
+    if (request.method !== 'GET' || url.origin !== self.location.origin) return false;
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/uploads/')) return false;
+    if (request.destination === 'document') return PUBLIC_NAVIGATION_PATHS.has(url.pathname);
+    return ['document', 'manifest', 'script', 'style', 'image', 'font', 'worker'].includes(request.destination);
+}
+
 self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
+    if (url.origin !== self.location.origin || request.method !== 'GET') return;
 
-    // Estrategia: Cache First para assets estáticos
-    if (STATIC_ASSETS.some(asset => url.pathname.endsWith(asset))) {
-        event.respondWith(caches.match(request).then(cachedResponse => {
-            return cachedResponse || fetch(request);
+    if (url.pathname.startsWith('/api/')) {
+        event.respondWith((async () => {
+            try {
+                const response = await fetch(request);
+                if (isCacheableApiRequest(request, url, response)) {
+                    const cache = await caches.open(API_CACHE);
+                    await cache.put(request, response.clone());
+                }
+                return response;
+            } catch {
+                const cached = await caches.match(request);
+                return cached || Response.json(
+                    { success: false, message: 'Sin conexión. Este recurso no está disponible sin conexión.' },
+                    { status: 503, headers: { 'Cache-Control': 'no-store' } }
+                );
+            }
+        })());
+        return;
+    }
+
+    if (request.mode === 'navigate' && !PUBLIC_NAVIGATION_PATHS.has(url.pathname)) {
+        event.respondWith(fetch(request).catch(async () => {
+            const cache = await caches.open(STATIC_CACHE);
+            return (await cache.match('./login.html')) || Response.error();
         }));
         return;
     }
 
-    // Estrategia: Network First, then Cache para la API (solo GET)
-    if (url.pathname.startsWith('/api/') && request.method === 'GET') {
-        event.respondWith(
-            fetch(request)
-                .then(response => {
-                    // Si la petición fue exitosa, la cacheamos
-                    const responseToCache = response.clone();
-                    caches.open(API_CACHE_NAME).then(cache => {
-                        cache.put(request, responseToCache);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    // Si la red falla, intentamos servir desde la caché
-                    return caches.match(request);
-                })
-        );
-        return;
-    }
+    if (!isStaticRequest(request, url)) return;
+    event.respondWith((async () => {
+        const cache = await caches.open(STATIC_CACHE);
+        const cached = await cache.match(request);
+        if (cached) return cached;
 
-    // Para otras peticiones (POST, PUT, DELETE), solo ir a la red
-    event.respondWith(fetch(request));
+        try {
+            const response = await fetch(request);
+            if (response.ok && response.type === 'basic') {
+                await cache.put(request, response.clone());
+            }
+            return response;
+        } catch {
+            if (request.mode === 'navigate') {
+                return (await cache.match('./login.html')) || Response.error();
+            }
+            return Response.error();
+        }
+    })());
 });

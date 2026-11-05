@@ -1,69 +1,70 @@
-import { createThreeEngine } from './three-engine.js';
-import { createSceneManager } from './scene-manager.js';
-import { createRenderManager } from './render-manager.js';
-import { createViewportControls } from './viewport-controls.js';
-import { bindEditorUI } from './editor-3d-ui-bridge.js';
-import { createTransformManager } from './editor-3d-transform.js';
-import { shouldBlockMobile, redirectToMobileBlock } from './editor-3d-core.js';
-
-function bootstrapEditor3D() {
+async function bootstrapEditor3D() {
   if (typeof window === 'undefined') return null;
   if (window.LFEditor3D && window.LFEditor3D.bootstrapped) return window.LFEditor3D;
 
   const frontCanvas = document.getElementById('editor-canvas-front');
   const backCanvas = document.getElementById('editor-canvas-back');
+  const previewCanvas = document.getElementById('garment-3d-canvas');
 
-  if (!frontCanvas && !backCanvas) {
+  if (!frontCanvas || !backCanvas || !previewCanvas) {
     return null;
   }
 
-  const sceneManager = createSceneManager({
-    scenes: [
-      { id: 'front', label: 'Frente', active: true },
-      { id: 'back', label: 'Trasera', active: false }
-    ],
-    activeIndex: 0
-  });
+  let preview;
+  try {
+    const { createGarmentPreview } = await import('./garment-preview.js');
+    preview = createGarmentPreview({
+      canvas: previewCanvas,
+      frontCanvas,
+      backCanvas,
+      getScenes: () => window.LFUTURE_EditorScenes
+    });
+  } catch (error) {
+    console.error('No se pudo iniciar el visor 3D:', error);
+    const message = document.getElementById('garment-3d-error');
+    if (message) message.hidden = false;
+    return null;
+  }
 
-  const frontEngine = createThreeEngine(frontCanvas, { background: '#18120b' });
-  const backEngine = createThreeEngine(backCanvas, { background: '#18120b' });
-  const renderManager = createRenderManager({ engine: frontEngine, sceneManager });
-  const transformManager = createTransformManager({ sceneManager });
-  const viewportControls = createViewportControls({ engine: frontEngine, sceneManager });
-  const bridge = bindEditorUI({ sceneManager, engine: frontEngine });
+  const layout = document.querySelector('.layout');
+  const viewButtons = [...document.querySelectorAll('[data-editor-view]')];
+
+  function setView(view) {
+    if (!layout) return;
+    layout.dataset.view = view;
+    viewButtons.forEach(button => {
+      const active = button.dataset.editorView === view;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    if (view === '3d') requestAnimationFrame(() => preview.resize());
+  }
+
+  viewButtons.forEach(button => button.addEventListener('click', () => setView(button.dataset.editorView)));
+  setView(window.matchMedia('(max-width: 760px)').matches ? '3d' : 'edit');
 
   const api = {
     bootstrapped: true,
-    sceneManager,
-    frontEngine,
-    backEngine,
-    renderManager,
-    transformManager,
-    viewportControls,
-    bridge,
+    preview,
     setActiveScene(index) {
-      sceneManager.setActiveScene(index);
-      renderManager.refresh();
-      bridge.sync();
-      return sceneManager.getActiveScene();
+      window.setActiveScene?.(index);
+      return index;
     },
+    setView,
     refresh() {
-      frontEngine.resize();
-      backEngine.resize();
-      renderManager.refresh();
-      bridge.sync();
+      preview.resize();
+      preview.sync();
+      return this;
+    },
+    syncTextures() {
+      preview.sync();
       return this;
     }
   };
 
-  if (shouldBlockMobile()) {
-    redirectToMobileBlock();
-    return api;
-  }
-
+  window.LFUTURE_3DPreview = preview;
   window.LFEditor3D = api;
   window.addEventListener('resize', () => api.refresh());
-
   return api;
 }
 

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Editor 3D PRO - Franela Delantera/Trasera - L-FUTURE</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="stylesheet" href="./editor-3d.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@700&family=Lora:wght@700&family=Bebas+Neue&family=Oswald:wght@700&family=Orbitron:wght@700&family=Pacifico&family=Press+Start+2P&family=Poiret+One&family=Russo+One&family=Playfair+Display:wght@700&family=Yellowtail&family=Quicksand:wght@700&family=Major+Mono+Display&family=Permanent+Marker&family=Fira+Mono:wght@700&family=Anton&family=Space+Mono:wght@700&family=Alfa+Slab+One&family=Tilt+Neon:wght@700&family=Saira+Extra+Condensed:wght@700&display=swap" rel="stylesheet">
   <style>
     :root { --main:#d4af37; --border:#b09e65; --bg:#18130c; }
@@ -56,17 +57,37 @@
     /* small responsive fix for sticker area to not overflow layout */
     .aside .sideblock .sticker-gallery::-webkit-scrollbar { width:8px; }
     .aside .sideblock .sticker-gallery::-webkit-scrollbar-thumb { background:#2a2413;border-radius:6px; }
+    @media (max-width: 980px) {
+      body { min-height:100vh; overflow-x:hidden; overflow-y:auto; padding-bottom:env(safe-area-inset-bottom); }
+      .layout { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto auto 1fr auto; height:auto; min-height:100vh; }
+      header { grid-column:1/-1; flex-wrap:wrap; gap:12px; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; }
+      header > span { font-size:18px !important; letter-spacing:0 !important; }
+      header > div { display:flex; flex-wrap:wrap; gap:8px; }
+      .canvas-wrap { grid-column:1/-1; grid-row:2; min-width:0; padding:12px max(12px,env(safe-area-inset-left)); }
+      .aside,.aside-right { position:static; height:auto; max-height:none; overflow:visible; padding:12px 10px; }
+      .aside { grid-column:1; grid-row:3; }
+      .aside-right { grid-column:2; grid-row:3; }
+      .scene-box { min-width:0; }
+      canvas { width:100%; height:auto; aspect-ratio:26/21; }
+      .btn { min-height:40px; }
+    }
+    @media (max-width: 640px) {
+      .layout { grid-template-columns:minmax(0,1fr); grid-template-rows:auto; }
+      header,.canvas-wrap,.aside,.aside-right { grid-column:1; }
+      header > div { width:100%; }
+      header > div .btn { flex:1 1 30%; }
+      .canvas-wrap { grid-row:2; padding:10px max(10px,env(safe-area-inset-right)) 14px max(10px,env(safe-area-inset-left)); }
+      .aside { grid-row:3; }
+      .aside-right { grid-row:4; }
+      .scene-box { padding:8px; border-radius:8px; }
+      .scene-title { width:100%; flex-wrap:wrap; }
+    }
   </style>
 </head>
 <body>
-<div class="layout">
-<script src="./editor-3d-core.js"></script>
+<div class="layout" data-view="edit">
 <script type="module" src="./engines/editor-3d-bootstrap.js"></script>
-  <script>
-    if (window.Editor3DCore && window.Editor3DCore.shouldBlockMobile()) {
-      window.Editor3DCore.redirectToMobileBlock();
-    }
-  </script>
+<script type="module" src="./editor-3d-ui.js"></script>
 <header>
   <span class="panel-label" style="font-size:22px;letter-spacing:2px;">L-FUTURE Editor 3D Realista — Frente / Trasera</span>
   <div>
@@ -77,30 +98,14 @@
 </header>
 
 <aside class="aside">
-  <div class="sideblock">
-    <div class="panel-label">🎽 Prenda</div>
-    <label>Color base</label><input type="color" id="color-base">
-    <div id="color-presets" style="margin:6px 0;"></div>
-    <label>
-      Tipo:
-      <select id="shirt-type">
-        <option value="tshirt">Franela</option>
-        <option value="sweater">Suéter</option>
-        <option value="polo">Polo</option>
-      </select>
-    </label>
-    <div style="margin-top:8px;">
-      <label style="font-weight:bold;color:#ffc72b;"><input type="checkbox" id="apply-to-both" checked> Aplicar color a ambas escenas</label>
-    </div>
-    <div class="small-muted" style="margin-top:8px;">Haz clic en la escena (arriba/abajo) para activarla. Los controles se aplican a la escena activa. Interacciones de arrastre/escala/rotación sólo mediante touch en el editor.</div>
-  </div>
-
-  <div class="sideblock">
+  <div class="sideblock" data-tool-panel="logos">
     <div class="panel-label">🏆 Logos L-Future</div>
+    <label class="tool-search-label" for="logo-search">Buscar por nombre o etiqueta</label>
+    <input id="logo-search" class="tool-search" type="search" placeholder="Ej. marca, urbano">
     <div class="lfuture-logo-gallery" id="lfuture-logo-gallery"></div>
   </div>
 
-  <div class="sideblock">
+  <div class="sideblock is-active" data-tool-panel="text">
     <div class="panel-label">✏️ Texto</div>
     <textarea id="text-input" rows="2" placeholder="Escribe texto aquí..."></textarea>
     <label style="margin-top:5px;font-weight:bold;color:#ffc72b;">Categoría:</label>
@@ -108,15 +113,31 @@
     <label style="font-weight:bold;color:#ffc72b;">Tipografía:</label>
     <select id="font-list-select" style="width:100%;padding:5px 6px;margin-bottom:7px;border-radius:7px;font-size:15px;"></select>
     <label>Tamaño:<input type="number" id="text-size" min="8" max="120" value="38"></label>
+    <input id="text-size-range" class="tool-range" type="range" min="8" max="120" value="38" aria-label="Tamaño de texto">
     <label>Color: <input type="color" id="text-color" value="#161410"></label>
+    <div id="recent-text-colors" class="recent-colors" aria-label="Colores usados recientemente"></div>
+    <div class="advanced-type-controls">
+      <label for="text-spacing">Espaciado</label><input id="text-spacing" type="range" min="-2" max="12" step="0.5" value="0">
+      <label for="text-line-height">Interlineado</label><input id="text-line-height" type="range" min="0.8" max="2.2" step="0.1" value="1.2">
+    </div>
     <div style="display:flex;gap:8px;margin-top:8px;">
       <button class="btn" id="add-text-btn">➕ Añadir texto</button>
       <button class="btn" id="add-text-to-both" title="Añadir texto a ambas escenas" style="background:#a08b25;">➕ Ambas</button>
     </div>
+    <button class="tool-secondary-button" id="ai-style-suggest" type="button">✦ Sugerir estilo y color</button>
   </div>
 
-  <div class="sideblock">
-    <div class="panel-label">⭐ Stickers</div>
+  <div class="sideblock" data-tool-panel="resources">
+    <div class="panel-label">◈ Recursos</div>
+    <label class="tool-search-label" for="resource-search">Buscar recursos</label>
+    <input id="resource-search" class="tool-search" type="search" placeholder="Formas, símbolos, etiquetas">
+    <div class="shape-grid" id="shape-grid">
+      <button type="button" class="shape-tool" data-shape="circle"><span>●</span><small>Círculo</small></button>
+      <button type="button" class="shape-tool" data-shape="triangle"><span>▲</span><small>Vector</small></button>
+      <button type="button" class="shape-tool" data-shape="star"><span>★</span><small>Estrella</small></button>
+      <button type="button" class="shape-tool" data-shape="diamond"><span>◆</span><small>Rombo</small></button>
+    </div>
+    <div class="panel-label panel-subtitle">Recursos de la comunidad</div>
     <div class="sticker-categories" id="sticker-categories"></div>
     <div class="sticker-gallery" id="sticker-gallery"></div>
     <div style="margin-top:8px;display:flex;gap:8px;">
@@ -124,15 +145,107 @@
     </div>
   </div>
 
-  <div class="sideblock">
+  <div class="sideblock" data-tool-panel="templates">
+    <div class="panel-label">▦ Plantillas</div>
+    <label class="tool-search-label" for="template-search">Buscar por nombre o categoría</label>
+    <input id="template-search" class="tool-search" type="search" placeholder="Minimal, urbano...">
+    <div class="template-category">
+      <h3>Franela</h3>
+      <button class="template-option" type="button" data-template="franela-minimal"><span class="template-swatch">F</span><span>Minimal</span></button>
+      <button class="template-option" type="button" data-template="franela-street"><span class="template-swatch">F+</span><span>Street print</span></button>
+    </div>
+    <div class="template-category">
+      <h3>Suéter</h3>
+      <button class="template-option" type="button" data-template="sueter-oversize"><span class="template-swatch">S</span><span>Oversize</span></button>
+    </div>
+    <div class="template-category">
+      <h3>Crop-top</h3>
+      <button class="template-option" type="button" data-template="crop-top"><span class="template-swatch">C</span><span>Essential</span></button>
+    </div>
+  </div>
+
+  <div class="sideblock" data-tool-panel="images">
     <div class="panel-label">🖼️ Imágenes</div>
-    <input type="file" id="image-upload" accept="image/*">
-    <div id="image-gallery" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:7px;"></div>
-    <div style="margin-top:8px;" class="small-muted">Añade imágenes y elígelas para la escena activa.</div>
+    <label for="image-upload">Desde el dispositivo</label>
+    <input type="file" id="image-upload" accept="image/png,image/jpeg,image/webp,image/gif">
+    <label for="camera-upload">Tomar fotografía</label>
+    <input type="file" id="camera-upload" accept="image/*" capture="environment">
+    <div class="image-action-grid">
+      <button type="button" class="tool-secondary-button" id="image-search-button">Buscar en web</button>
+      <button type="button" class="tool-secondary-button" id="image-background-remove">Quitar fondo claro</button>
+      <button type="button" class="tool-secondary-button" id="image-crop">Recortar al centro</button>
+      <button type="button" class="tool-secondary-button" id="image-copy">Copiar</button>
+      <button type="button" class="tool-secondary-button" id="image-paste">Pegar</button>
+      <button type="button" class="tool-secondary-button" id="image-delete">Eliminar</button>
+    </div>
+    <label for="image-corner-radius">Radio de esquina</label>
+    <input id="image-corner-radius" class="tool-range" type="range" min="0" max="50" value="0">
+    <label for="image-search">Buscar en mis imágenes</label>
+    <input id="image-search" class="tool-search" type="search" placeholder="Filtrar subidas">
+  </div>
+
+  <div class="sideblock" data-tool-panel="uploads">
+    <div class="panel-label">⇧ Subidas</div>
+    <p class="small-muted">Imágenes de la escena activa</p>
+    <div id="image-gallery" class="upload-gallery"></div>
+    <div class="panel-label panel-subtitle">Biblioteca de usuario</div>
+    <div id="user-uploads-gallery" class="upload-gallery"></div>
+    <button id="uploads-load-more" class="tool-secondary-button" type="button" hidden>Cargar más</button>
+    <p class="small-muted" id="upload-status" aria-live="polite"></p>
+  </div>
+
+  <div class="sideblock" data-tool-panel="tools">
+    <div class="panel-label">⚙ Herramientas</div>
+    <label>Color de prenda</label><input type="color" id="color-base">
+    <div id="color-presets" style="margin:6px 0;"></div>
+    <label>Tipo de prenda
+      <select id="shirt-type">
+        <option value="tshirt">Franela</option>
+        <option value="sweater">Suéter</option>
+        <option value="polo">Polo</option>
+        <option value="crop-top">Crop-top</option>
+      </select>
+    </label>
+    <label class="tool-check"><input type="checkbox" id="apply-to-both" checked> Aplicar color a ambas escenas</label>
+    <div class="image-action-grid">
+      <button type="button" class="tool-secondary-button" id="tool-duplicate">Duplicar elemento</button>
+      <button type="button" class="tool-secondary-button" id="tool-brush">Dibujo libre</button>
+      <button type="button" class="tool-secondary-button" id="tool-eraser">Borrador</button>
+    </div>
+    <div class="panel-label panel-subtitle">Capas</div>
+    <div class="elements-list tool-layers-list" id="tool-layers-list"></div>
+    <div id="properties-panel" class="selected-properties" style="display:none;">
+      <div class="panel-label panel-subtitle">Propiedades</div>
+      <label>X:<input id="prop-x" type="number" step="1"></label>
+      <label>Y:<input id="prop-y" type="number" step="1"></label>
+      <label>Escala:<input id="prop-scale" type="number" min="1" max="1000"></label>
+      <label>Rotación:<input id="prop-rotate" type="number" min="-360" max="360"></label>
+      <label>Opacidad:<input id="prop-opacity" type="number" min="0" max="100"></label>
+      <label>Tipografía
+        <select id="prop-font" class="font-picker">
+          <option value="Arial">Arial</option>
+          <option value="Orbitron">Orbitron</option>
+          <option value="Space Mono">Space Mono</option>
+          <option value="Permanent Marker">Permanent Marker</option>
+          <option value="Saira Extra Condensed">Saira Extra Condensed</option>
+        </select>
+      </label>
+      <label>Alineación:<select id="prop-align"><option>center</option><option>left</option><option>right</option></select></label>
+      <button class="tool-secondary-button" type="button" onclick="deleteCurrent()">Eliminar elemento</button>
+    </div>
   </div>
 </aside>
 
 <main class="canvas-wrap">
+  <div class="stage-toolbar" role="group" aria-label="Modo de edición">
+    <button class="stage-mode active" type="button" data-editor-view="edit" aria-pressed="true">Editar</button>
+    <button class="stage-mode" type="button" data-editor-view="3d" aria-pressed="false">Vista 3D</button>
+    <span class="stage-hint">Arrastra para girar · pellizca para zoom</span>
+  </div>
+  <section class="garment-preview" aria-label="Vista previa 3D de la prenda">
+    <canvas id="garment-3d-canvas" aria-label="Prenda 3D interactiva"></canvas>
+    <p id="garment-3d-error" class="preview-error" hidden>No se pudo iniciar WebGL en este dispositivo.</p>
+  </section>
   <div id="scene-front" class="scene-box scene-active" data-scene="0" onclick="setActiveScene(0)">
     <div class="scene-title"><span>🟡 Frente (arriba)</span><div style="flex:1"></div><div class="scene-actions"><button class="btn-small btn" title="Activar frente" onclick="setActiveScene(0);event.stopPropagation();">F</button></div></div>
     <canvas id="editor-canvas-front" width="520" height="420"></canvas>
@@ -160,45 +273,31 @@
     </div>
     <div class="elements-list" id="elements-list"></div>
   </div>
-
-  <div class="sideblock" id="properties-panel" style="display:none;">
-    <div class="panel-label">⚙️ Propiedades</div>
-    <label>X:<input id="prop-x" type="number" step="1"></label>
-    <label>Y:<input id="prop-y" type="number" step="1"></label>
-    <label>Escala:<input id="prop-scale" type="number" min="20" max="400"></label>
-    <label>Rotación:<input id="prop-rotate" type="number" min="0" max="360"></label>
-    <label>Opacidad:<input id="prop-opacity" type="number" min="10" max="100"></label>
-    <label>Tipografía para texto:
-      <select id="prop-font" class="font-picker">
-        <option value="Arial" style="font-family:Arial;">Arial</option>
-        <option value="Montserrat" style="font-family:Montserrat,sans-serif;">Montserrat</option>
-        <option value="Lora" style="font-family:Lora,serif;">Lora</option>
-        <option value="Roboto" style="font-family:Roboto,sans-serif;">Roboto</option>
-        <option value="Oswald" style="font-family:Oswald,sans-serif;">Oswald</option>
-        <option value="Orbitron" style="font-family:Orbitron,sans-serif;">Orbitron</option>
-        <option value="Pacifico" style="font-family:Pacifico,cursive;">Pacifico</option>
-        <option value="Press Start 2P" style="font-family:'Press Start 2P',cursive;">Press Start 2P</option>
-        <option value="Poiret One" style="font-family:'Poiret One',cursive;">Poiret One</option>
-        <option value="Russo One" style="font-family:'Russo One',sans-serif;">Russo One</option>
-        <option value="Playfair Display" style="font-family:'Playfair Display',serif;">Playfair Display</option>
-        <option value="Yellowtail" style="font-family:Yellowtail,cursive;">Yellowtail</option>
-        <option value="Quicksand" style="font-family:Quicksand,sans-serif;">Quicksand</option>
-        <option value="Major Mono Display" style="font-family:'Major Mono Display',monospace;">Major Mono Display</option>
-        <option value="Permanent Marker" style="font-family:'Permanent Marker',cursive;">Permanent Marker</option>
-        <option value="Fira Mono" style="font-family:'Fira Mono',monospace;">Fira Mono</option>
-        <option value="Anton" style="font-family:Anton,sans-serif;">Anton</option>
-        <option value="Space Mono" style="font-family:'Space Mono',monospace;">Space Mono</option>
-        <option value="Alfa Slab One" style="font-family:'Alfa Slab One',serif;">Alfa Slab One</option>
-        <option value="Tilt Neon" style="font-family:'Tilt Neon',sans-serif;">Tilt Neon</option>
-        <option value="Saira Extra Condensed" style="font-family:'Saira Extra Condensed',sans-serif;">Saira Extra Condensed</option>
-      </select>
-    </label>
-    <label>Alineación:<select id="prop-align"><option>center</option><option>left</option><option>right</option></select></label>
-    <button class="btn" onclick="deleteCurrent()" style="background:#ba3535;color:#fff;margin-top:10px;">🗑️ Eliminar</button>
-  </div>
 </aside>
 
 </div>
+
+<nav class="editor-bottom-nav" aria-label="Herramientas del editor">
+  <button type="button" data-editor-tool="text" aria-pressed="true"><span aria-hidden="true">Aa</span><small>Texto</small></button>
+  <button type="button" data-editor-tool="resources" aria-pressed="false"><span aria-hidden="true">◈</span><small>Recursos</small></button>
+  <button type="button" data-editor-tool="images" aria-pressed="false"><span aria-hidden="true">▧</span><small>Imágenes</small></button>
+  <button type="button" data-editor-tool="templates" aria-pressed="false"><span aria-hidden="true">▦</span><small>Plantillas</small></button>
+  <button type="button" data-editor-tool="uploads" aria-pressed="false"><span aria-hidden="true">⇧</span><small>Subidas</small></button>
+  <button type="button" data-editor-tool="logos" aria-pressed="false"><span aria-hidden="true">LF</span><small>Logos</small></button>
+  <button type="button" data-editor-tool="tools" aria-pressed="false"><span aria-hidden="true">⚙</span><small>Herramientas</small></button>
+</nav>
+
+<dialog id="template-confirm" class="template-confirm-dialog">
+  <form method="dialog">
+    <p class="dialog-eyebrow">APLICAR PLANTILLA</p>
+    <h2>¿Deseas comenzar con esta plantilla?</h2>
+    <p>Se reemplazará el diseño actual de ambas escenas. Esta acción no se puede deshacer.</p>
+    <div class="dialog-actions">
+      <button id="template-confirm-no" class="tool-secondary-button" type="button">Conservar diseño</button>
+      <button id="template-confirm-yes" class="tool-primary-button" type="button">Aplicar plantilla</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="toast" style="display:none;"></div>
 
@@ -226,6 +325,11 @@ const FONT_CATEGORIES = [
     {name:"Russo One", gFont:"Russo One", demo:"Robótico", style:"font-family:'Russo One',sans-serif;"},
     {name:"Tilt Neon", gFont:"Tilt Neon", demo:"Retro tech", style:"font-family:'Tilt Neon',sans-serif;text-shadow:0 0 11px #3f6;"},
     {name:"Saira Extra Condensed", gFont:"Saira Extra Condensed", demo:"Ultra compacto", style:"font-family:'Saira Extra Condensed',sans-serif;letter-spacing:1.2px;"}
+  ]},
+  {cat: "Darkelectro", fonts: [
+    {name:"Orbitron", gFont:"Orbitron", demo:"Dark electro", style:"font-family:Orbitron,sans-serif;"},
+    {name:"Space Mono", gFont:"Space Mono", demo:"Signal / 26", style:"font-family:'Space Mono',monospace;"},
+    {name:"Permanent Marker", gFont:"Permanent Marker", demo:"Night shift", style:"font-family:'Permanent Marker',cursive;"}
   ]},
   {cat: "3D Impacto", fonts: [
     {name:"Anton", gFont:"Anton", demo:"Poderoso 3D", style:"font-family:Anton,sans-serif;font-weight:bold;text-shadow:2px 2px 0 #fff3,4px 4px 7px #000b;"},
@@ -288,6 +392,9 @@ const scenes = [
 
 let currentSceneIndex = 0;
 let canvases = [], ctxs = [], handles = [];
+const editorImageCache = new Map();
+window.currentSceneIndex = currentSceneIndex;
+window.LFUTURE_EditorScenes = scenes;
 // When true, selection highlight is suppressed (used during export)
 window.suppressSelection = false;
 
@@ -360,12 +467,18 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   }catch(e){ console.warn('No se pudo cargar proyecto local desde query', e); }
   document.getElementById('add-text-to-both').onclick = () => addTextToBoth();
-  document.getElementById('image-upload').onchange = handleImageUpload;
   ["prop-x","prop-y","prop-scale","prop-rotate","prop-opacity","prop-align","prop-font"].forEach(id=>{ document.getElementById(id).oninput = changePropsFromPanel; });
 
   renderLFutureLogoGallery(); renderStickerCategories(); renderStickers();
   scenes.forEach((_,i)=> saveHistory(i));
   renderAll();
+
+  const projectId = Number(new URLSearchParams(location.search).get('proyecto'));
+  if (Number.isSafeInteger(projectId) && projectId > 0) {
+    currentProjectId = projectId;
+    window.currentProjectId = projectId;
+    loadServerProject(projectId);
+  }
 });
 
 /* ---------- Scene utils ---------- */
@@ -373,6 +486,7 @@ function scene(i){ return scenes[i]; }
 function currentScene(){ return scenes[currentSceneIndex]; }
 function setActiveScene(i){
   currentSceneIndex = i;
+  window.currentSceneIndex = i;
   document.getElementById('scene-front').classList.toggle('scene-active', i===0);
   document.getElementById('scene-back').classList.toggle('scene-active', i===1);
   document.getElementById('active-scene-label').textContent = scenes[i].name;
@@ -388,7 +502,7 @@ function duplicateToOther(){
 }
 
 /* ---------- Logos / stickers / images ---------- */
-function renderLFutureLogoGallery(){ let gal=document.getElementById('lfuture-logo-gallery'); gal.innerHTML = LFUTURE_LOGOS.map((src,i)=>`<span class="lfuture-logo-thumb" title="Añadir logo" onclick="addLFutureLogo(${i})"><img src="${src}" alt="Logo ${i+1}"></span>`).join(''); }
+function renderLFutureLogoGallery(){ window.renderLFutureLogos?.(); }
 function addLFutureLogo(i){ let id=Date.now()+Math.floor(Math.random()*10000); const sc=currentScene(); sc.state.imglist.push({id,url:LFUTURE_LOGOS[i]}); sc.state.elementos.push({tipo:'img',image_id:id,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
 function renderStickerCategories(){ let container=document.getElementById('sticker-categories'); container.innerHTML = Object.keys(STICKER_CATEGORIES).map(cat=>`<span class="sticker-tab${cat===currentScene().state.stickerCategoria?' active':''}" onclick="selectStickerCategory('${cat}')">${cat}</span>`).join(''); }
 function selectStickerCategory(cat){ currentScene().state.stickerCategoria = cat; renderStickerCategories(); renderStickers(); }
@@ -396,15 +510,15 @@ function renderStickers(){ let gallery=document.getElementById('sticker-gallery'
 function addSticker(em){ const sc=currentScene(); sc.state.elementos.push({tipo:'logo',contenido:em,tamano:52,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
 function addStickerToBoth(){ const txt="⭐"; scenes.forEach((scObj,idx)=>{ scObj.state.elementos.push({tipo:'logo',contenido:txt,tamano:52,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(idx); }); renderAll(); }
 function handleImageUpload(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=function(ev){ let id=Date.now()+Math.floor(Math.random()*10000); const sc=currentScene(); sc.state.imglist.push({id,url:ev.target.result}); sc.state.elementos.push({tipo:'img',image_id:id,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }; reader.readAsDataURL(file); }
-function renderImgs(){ let g=document.getElementById('image-gallery'); if(!g) return; const sc=currentScene(); g.innerHTML = sc.state.imglist.map((img,i)=>`<span class="color-preset small" onclick="addImgToCanvas(${i})" style="background:#ccc url('${img.url}') center/cover no-repeat"></span>`).join(''); }
+function renderImgs(){ const gallery=document.getElementById('image-gallery'); if(!gallery) return; const sc=currentScene(); gallery.replaceChildren(...sc.state.imglist.map((img,index)=>{ const button=document.createElement('button'); button.type='button'; button.className='color-preset small'; button.title=img.name||'Añadir imagen'; const preview=document.createElement('img'); preview.src=img.url; preview.alt=''; const label=document.createElement('span'); label.textContent=img.name||`Imagen ${index+1}`; button.append(preview,label); button.addEventListener('click',()=>addImgToCanvas(index)); return button; })); }
 function addImgToCanvas(i){ const sc=currentScene(); let im=sc.state.imglist[i]; sc.state.elementos.push({tipo:'img',image_id:im.id,x:0,y:0,rotacion:0,opacidad:100,escala:1,alineacion:'center'}); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
 
 /* ---------- Text helpers ---------- */
-function addTextToActive(){ const txtarea=document.getElementById('text-input'); const txt=txtarea.value.trim(); if(!txt) return toast("Texto vacío","info"); const fuente=getCurrentFontName(); const sc=currentScene(); let el={ tipo:'texto', contenido:txt, tamano:parseInt(document.getElementById('text-size').value)||38, fuente:fuente, color:document.getElementById('text-color').value, x:0, y:0, rotacion:0, opacidad:100, escala:1, alineacion:'center' }; sc.state.elementos.push(el); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
-function addTextToBoth(){ const txtarea=document.getElementById('text-input'); const txt=txtarea.value.trim(); if(!txt) return toast("Texto vacío","info"); const fuente=getCurrentFontName(); scenes.forEach((scObj,idx)=>{ let el={ tipo:'texto', contenido:txt, tamano:parseInt(document.getElementById('text-size').value)||38, fuente:fuente, color:document.getElementById('text-color').value, x:0, y:0, rotacion:0, opacidad:100, escala:1, alineacion:'center' }; scObj.state.elementos.push(el); saveHistory(idx); }); renderAll(); }
+function addTextToActive(){ const txtarea=document.getElementById('text-input'); const txt=txtarea.value.trim(); if(!txt) return toast("Texto vacío","info"); const fuente=getCurrentFontName(); const sc=currentScene(); let el={ tipo:'texto', contenido:txt, tamano:parseInt(document.getElementById('text-size').value)||38, fuente:fuente, color:document.getElementById('text-color').value, espaciado:Number(document.getElementById('text-spacing').value)||0, lineHeight:Number(document.getElementById('text-line-height').value)||1.2, x:0, y:0, rotacion:0, opacidad:100, escala:1, alineacion:'center' }; sc.state.elementos.push(el); saveHistory(currentSceneIndex); selectElement(sc, sc.state.elementos.length-1); renderAll(); }
+function addTextToBoth(){ const txtarea=document.getElementById('text-input'); const txt=txtarea.value.trim(); if(!txt) return toast("Texto vacío","info"); const fuente=getCurrentFontName(); scenes.forEach((scObj,idx)=>{ let el={ tipo:'texto', contenido:txt, tamano:parseInt(document.getElementById('text-size').value)||38, fuente:fuente, color:document.getElementById('text-color').value, espaciado:Number(document.getElementById('text-spacing').value)||0, lineHeight:Number(document.getElementById('text-line-height').value)||1.2, x:0, y:0, rotacion:0, opacidad:100, escala:1, alineacion:'center' }; scObj.state.elementos.push(el); saveHistory(idx); }); renderAll(); }
 
 /* ---------- Elements list / props ---------- */
-function updateList(){ let lst=document.getElementById('elements-list'); const sc=currentScene(); lst.innerHTML = sc.state.elementos.map((el,i)=>`<div class="element-item${i===sc.state.selected?' selected':''}" onclick="selectElementByIndex(${i})">${(el.tipo==="texto"?"📝":el.tipo==="logo"?"⭐":"🖼️")}<span>${(el.contenido||'Img').toString().substring(0,28)}</span></div>`).join(''); }
+function updateList(){ const list=document.getElementById('elements-list'); const sc=currentScene(); if(!list) return; list.replaceChildren(...sc.state.elementos.map((element,index)=>{ const button=document.createElement('button'); button.type='button'; button.className=`element-item${index===sc.state.selected?' selected':''}`; const icon=document.createElement('span'); icon.textContent=element.tipo==='texto'?'Aa':element.tipo==='logo'?'LF':element.tipo==='forma'?'◈':element.tipo==='stroke'?'／':'▧'; const label=document.createElement('span'); label.textContent=String(element.contenido||element.forma||'Imagen').slice(0,28); button.append(icon,label); button.addEventListener('click',()=>selectElementByIndex(index)); return button; })); }
 function selectElementByIndex(i){ const sc=currentScene(); selectElement(sc,i); renderAll(); }
 function selectElement(scObj,i){ scObj.state.selected = i; updatePropPanel(); renderAll(); positionMiniHandleForScene(currentSceneIndex); }
 function deleteCurrent(){ const sc=currentScene(); if(sc.state.selected!=null){ sc.state.elementos.splice(sc.state.selected,1); sc.state.selected=null; saveHistory(currentSceneIndex); renderAll(); } }
@@ -412,7 +526,7 @@ function updatePropPanel(){ let p=document.getElementById('properties-panel'); c
 function changePropsFromPanel(){ const sc=currentScene(); if(sc.state.selected==null) return; let el=sc.state.elementos[sc.state.selected]; el.x=parseInt(document.getElementById('prop-x').value)||0; el.y=parseInt(document.getElementById('prop-y').value)||0; el.escala=(parseInt(document.getElementById('prop-scale').value)||100)/100; el.rotacion=parseInt(document.getElementById('prop-rotate').value)||0; el.opacidad=parseInt(document.getElementById('prop-opacity').value)||100; el.alineacion=document.getElementById('prop-align').value||'center'; if(el.tipo==="texto") el.fuente=document.getElementById('prop-font').value; saveHistory(currentSceneIndex); renderAll(); }
 
 /* ---------- Rendering orchestration ---------- */
-function renderAll(){ scenes.forEach((scObj,idx)=> renderScene(idx)); updateList(); updatePropPanel(); }
+function renderAll(){ scenes.forEach((scObj,idx)=> renderScene(idx)); updateList(); updatePropPanel(); window.renderEditorLayers?.(); window.LFUTURE_3DPreview?.sync(); }
 function renderScene(idx){ const scObj=scenes[idx]; const c=canvases[idx]; const ctx=ctxs[idx]; ctx.clearRect(0,0,c.width,c.height); drawShirtRealista(ctx,c,scObj.state); drawElements(ctx,c,scObj.state, idx); drawHandlesForScene(idx); }
 
 /* ---------- Improved shirt drawing (front/back) ---------- */
@@ -428,6 +542,10 @@ function drawShirtRealista(ctx, canvas, stateObj){
   let color = stateObj.shirt.color;
   let tipo = stateObj.shirt.type;
   let view = stateObj.shirt.view; // 'front' or 'back'
+  if(tipo === 'crop-top'){
+    H *= 0.72;
+    y = cy - H/2;
+  }
 
   // soft shadow under t-shirt to lift
   ctx.save();
@@ -631,25 +749,77 @@ function drawElements(ctx, canvas, stateObj, sceneIndex){
     let fontFamily = el.fuente || "Arial";
     if(el.tipo==="texto"){
       ctx.font = `bold ${el.tamano||38}px "${fontFamily}",Arial,sans-serif`;
-      ctx.textAlign = el.alineacion||'center';
       ctx.fillStyle = el.color||"#0b0b0c";
-      ctx.fillText(el.contenido, 0, 0);
+      const lines = String(el.contenido || '').split('\n');
+      const lineHeight = (el.tamano || 38) * (Number(el.lineHeight) || 1.2);
+      const spacing = Number(el.espaciado) || 0;
+      lines.forEach((line, lineIndex) => {
+        const y = (lineIndex - (lines.length - 1) / 2) * lineHeight;
+        if (!spacing) {
+          ctx.textAlign = el.alineacion || 'center';
+          ctx.fillText(line, 0, y);
+        } else {
+          const chars = Array.from(line);
+          const width = chars.reduce((total, char) => total + ctx.measureText(char).width, 0) + Math.max(0, chars.length - 1) * spacing;
+          let x = el.alineacion === 'left' ? 0 : el.alineacion === 'right' ? -width : -width / 2;
+          ctx.textAlign = 'left';
+          chars.forEach(char => {
+            ctx.fillText(char, x, y);
+            x += ctx.measureText(char).width + spacing;
+          });
+        }
+      });
     } else if(el.tipo==="logo"){
       ctx.font = `${el.tamano||43}px Arial`;
       ctx.textAlign = "center";
       ctx.fillStyle = "#c2ae74";
       ctx.fillText(el.contenido, 0, 0);
+    } else if(el.tipo === 'forma'){
+      const size = Number(el.tamano) || 72;
+      ctx.fillStyle = el.color || '#62e2dc';
+      ctx.beginPath();
+      if(el.forma === 'circle'){
+        ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      } else if(el.forma === 'triangle'){
+        ctx.moveTo(0, -size / 2); ctx.lineTo(size / 2, size / 2); ctx.lineTo(-size / 2, size / 2); ctx.closePath();
+      } else if(el.forma === 'star'){
+        for(let point = 0; point < 10; point += 1){
+          const radius = point % 2 ? size * 0.22 : size * 0.5;
+          const angle = -Math.PI / 2 + point * Math.PI / 5;
+          const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
+          point ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.closePath();
+      } else {
+        ctx.moveTo(0, -size / 2); ctx.lineTo(size / 2, 0); ctx.lineTo(0, size / 2); ctx.lineTo(-size / 2, 0); ctx.closePath();
+      }
+      ctx.fill();
+    } else if(el.tipo === 'stroke' && Array.isArray(el.points)){
+      ctx.strokeStyle = el.color || '#62e2dc';
+      ctx.lineWidth = Number(el.tamano) || 5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      el.points.forEach((point, pointIndex) => pointIndex ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+      ctx.stroke();
     } else if(el.tipo==="img"){
       let img = stateObj.imglist.find(im=>im.id===el.image_id);
       if(img){
-        let im = new Image();
-        im.src = img.url;
-        if(!im.complete){
-          im.onload = function(){ renderAll(); };
+        let im = editorImageCache.get(img.url);
+        if(!im){
+          im = new Image();
+          im.onload = function(){ window.renderAll?.(); };
+          im.onerror = function(){ editorImageCache.delete(img.url); };
+          editorImageCache.set(img.url, im);
+          im.src = img.url;
         }
         // allow custom bounding box by escala
         let size = 110;
-        ctx.drawImage(im, -size/2, -size/2, size, size);
+        const radius = Math.max(0, Math.min(Number(el.cornerRadius) || 0, size / 2));
+        if(radius && typeof ctx.roundRect === 'function'){
+          ctx.beginPath(); ctx.roundRect(-size/2, -size/2, size, size, radius); ctx.clip();
+        }
+        if(im.complete && im.naturalWidth) ctx.drawImage(im, -size/2, -size/2, size, size);
       }
     }
     if(i === stateObj.selected && !window.suppressSelection){
@@ -930,6 +1100,51 @@ function exportBothPNG(){
   toast("Exportado: frente + trasera en una sola imagen","success");
 }
 
+let currentProjectId = null;
+window.currentProjectId = currentProjectId;
+
+async function loadServerProject(projectId){
+  const API_BASE_URL = window.API_BASE_URL || (location.origin + '/api');
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    toast('Inicia sesión para abrir este proyecto','error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/proyectos/${projectId}/estado-diseno`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include'
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result || !result.success || !result.estado_diseno) {
+      throw new Error(result?.message || 'No se pudo cargar el diseño guardado');
+    }
+
+    result.estado_diseno.escenas.forEach((savedScene, index) => {
+      const sceneState = scenes[index].state;
+      sceneState.shirt = Object.assign({}, sceneState.shirt, savedScene.shirt);
+      sceneState.elementos = savedScene.elementos;
+      sceneState.imglist = savedScene.imglist;
+      sceneState.selected = null;
+      sceneState.historial = [];
+      sceneState.historialRedo = [];
+      saveHistory(index);
+    });
+
+    currentSceneIndex = 0;
+    document.getElementById('color-base').value = scenes[0].state.shirt.color;
+    document.getElementById('shirt-type').value = scenes[0].state.shirt.type;
+    renderImgs();
+    renderStickerCategories();
+    renderAll();
+    toast('Proyecto cargado desde el servidor','success');
+  } catch (error) {
+    console.error('Error cargando proyecto:', error);
+    toast(error.message || 'No se pudo cargar el proyecto','error');
+  }
+}
+
 async function saveProject(){
   const nombre=(prompt('Nombre del proyecto:','Proyecto-'+Date.now())||"Proyecto").substring(0,64);
   const proyectoPayload = {
@@ -938,46 +1153,70 @@ async function saveProject(){
     color_prenda: (scenes[0] && scenes[0].state && scenes[0].state.shirt && scenes[0].state.shirt.color) ? scenes[0].state.shirt.color : '#000000',
     talla: '',
     tags: '',
-    elementos: scenes.map(s=>({ name:s.name, shirt:s.state.shirt, elementos:s.state.elementos, imglist:s.state.imglist })),
+    estado_diseno: {
+      version: 1,
+      escenas: scenes.map(s=>({ name:s.name, shirt:s.state.shirt, elementos:s.state.elementos, imglist:s.state.imglist }))
+    },
     fecha_creacion: new Date().toISOString()
   };
 
   const API_BASE_URL = window.API_BASE_URL || (location.protocol + '//' + location.hostname + (location.port?(':'+location.port):'') + '/api');
   const token = localStorage.getItem('auth_token');
 
-  // Try to save to server (use Authorization if token present, otherwise rely on cookie via credentials)
+  // Save the current project when editing; otherwise create a new one.
   try {
-      // Create proyecto
-      const res = await fetch(`${API_BASE_URL}/proyectos`, {
-        method: 'POST',
-        headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'Authorization': `Bearer ${token}` } : {}),
-        credentials: 'include',
-        body: JSON.stringify({ nombre: proyectoPayload.nombre, descripcion: proyectoPayload.descripcion, color_prenda: proyectoPayload.color_prenda, talla: proyectoPayload.talla, tags: proyectoPayload.tags })
-      });
-      const data = await res.json();
-      // Server may return different shapes: { success:true, proyecto_id: N } or { success:true, data:{proyecto:{id: N}} }
-      let proyectoId = null;
-      if (data && data.success) {
-        if (typeof data.proyecto_id !== 'undefined') proyectoId = data.proyecto_id;
-        else if (data.data && data.data.proyecto && data.data.proyecto.id) proyectoId = data.data.proyecto.id;
-        else if (data.data && data.data.proyecto_id) proyectoId = data.data.proyecto_id;
-      }
-      if (proyectoId) {
-        // Upload/replace elementos atomically using PUT endpoint
-        await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/elementos`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          credentials: 'include',
-          body: JSON.stringify({ elementos: proyectoPayload.elementos })
-        });
+    if (!token) throw new Error('Inicia sesión para guardar en el servidor');
 
-        // Notify other pages (list) that a new proyecto is available
-        try { localStorage.setItem('lf_project_saved', JSON.stringify({ id: proyectoId, ts: Date.now() })); } catch(e){/*ignore*/}
-        toast('Proyecto guardado en servidor!','success');
-        return;
-      } else {
-        console.warn('Creación de proyecto falló, fallback a localStorage', data);
-      }
+    const updatingExisting = Boolean(currentProjectId);
+    let proyectoId = currentProjectId;
+    let projectResponse;
+    if (proyectoId) {
+      projectResponse = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
+        body: JSON.stringify({ nombre: proyectoPayload.nombre })
+      });
+    } else {
+      projectResponse = await fetch(`${API_BASE_URL}/proyectos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
+        body: JSON.stringify({
+          nombre: proyectoPayload.nombre,
+          descripcion: proyectoPayload.descripcion,
+          color_prenda: proyectoPayload.color_prenda,
+          talla: proyectoPayload.talla,
+          tags: proyectoPayload.tags
+        })
+      });
+    }
+
+    const projectResult = await projectResponse.json().catch(() => null);
+    if (!projectResponse.ok || !projectResult || !projectResult.success) {
+      throw new Error(projectResult?.message || 'No se pudo guardar el proyecto');
+    }
+    if (!proyectoId) {
+      proyectoId = projectResult.proyecto_id || projectResult.data?.proyecto_id;
+      if (!proyectoId) throw new Error('El servidor no devolvió el ID del proyecto');
+      currentProjectId = proyectoId;
+      window.currentProjectId = proyectoId;
+    }
+
+    const stateResponse = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/estado-diseno`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      credentials: 'include',
+      body: JSON.stringify(proyectoPayload.estado_diseno)
+    });
+    const stateResult = await stateResponse.json().catch(() => null);
+    if (!stateResponse.ok || !stateResult || !stateResult.success) {
+      throw new Error(stateResult?.message || 'El servidor no pudo guardar el diseño completo');
+    }
+
+    try { localStorage.setItem('lf_project_saved', JSON.stringify({ id: proyectoId, ts: Date.now() })); } catch(e){/*ignore*/}
+    toast(updatingExisting ? 'Proyecto actualizado en servidor' : 'Proyecto guardado en servidor','success');
+    return;
     } catch (err) {
       console.error('Error guardando proyecto en servidor:', err);
       toast('No fue posible guardar en servidor, guardando localmente','error');
@@ -986,7 +1225,7 @@ async function saveProject(){
   // Fallback: save locally
     try {
     let proyectos=JSON.parse(localStorage.getItem('mis_proyectos_lf23')||'[]');
-    proyectos.push({ nombre: proyectoPayload.nombre, escenas: proyectoPayload.elementos, fecha: proyectoPayload.fecha_creacion });
+    proyectos.push({ nombre: proyectoPayload.nombre, escenas: proyectoPayload.estado_diseno.escenas, fecha: proyectoPayload.fecha_creacion });
     localStorage.setItem('mis_proyectos_lf23', JSON.stringify(proyectos));
     try { localStorage.setItem('lf_project_saved', JSON.stringify({ id: null, ts: Date.now() })); } catch(e){}
     toast('Proyecto guardado localmente!','success');
