@@ -6,11 +6,14 @@
   const API_BASE = (window.LF_CONFIG && window.LF_CONFIG.API_URL)
     ? window.LF_CONFIG.API_URL.replace(/\/$/, '')
     : (location.origin + '/api');
+  const API_V1_BASE = (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL)
+    ? window.LF_CONFIG.API_V1_URL.replace(/\/$/, '')
+    : (location.origin + '/api/v1');
 
   window.login = window.login || (async function(username, password){
     if(!username || !password) return { success: false, message: 'Faltan credenciales' };
     try{
-      const res = await fetch(`${API_BASE}/login`, {
+      const res = await fetch(`${API_V1_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -30,7 +33,7 @@
   window.register = window.register || (async function(username, password, confirm_password){
     if(!username || !password) return { success: false, message: 'Faltan datos' };
     try{
-      const res = await fetch(`${API_BASE}/register`, {
+      const res = await fetch(`${API_V1_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, confirm_password }),

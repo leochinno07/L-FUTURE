@@ -7,6 +7,10 @@ const frontendRoot = fileURLToPath(new URL('./frontend', import.meta.url));
 const outputRoot = resolve(frontendRoot, 'dist');
 const backendTarget = process.env.LF_BACKEND_URL || 'http://127.0.0.1:5000';
 const apiProxy = {
+  '/api/v1': {
+    target: process.env.LF_API_V1_URL || 'http://127.0.0.1:8000',
+    changeOrigin: true
+  },
   '/api': {
     target: backendTarget,
     changeOrigin: true

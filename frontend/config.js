@@ -19,6 +19,10 @@ const API_BASE_URL = (
     window.API_BASE_URL ||
     `${window.location.origin}/api`
 ).replace(/\/+$/, '');
+const API_V1_BASE_URL = (
+    window.LF_API_V1_BASE_URL ||
+    `${window.location.origin}/api/v1`
+).replace(/\/+$/, '');
 
 /**
  * Detecta automáticamente si estamos en producción
@@ -33,6 +37,7 @@ const IS_PRODUCTION = window.location.protocol === 'https:' &&
 const CONFIG = {
     // URL base de la API
     API_URL: API_BASE_URL,
+    API_V1_URL: API_V1_BASE_URL,
     
     // Modo de ejecución
     IS_PRODUCTION: IS_PRODUCTION,
@@ -55,10 +60,16 @@ const CONFIG = {
 window.CONFIG = CONFIG;
 window.LF_CONFIG = CONFIG;
 window.API_BASE_URL = API_BASE_URL;
+window.API_V1_URL = API_V1_BASE_URL;
 
 // Función para obtener la URL de la API
 window.getApiUrl = function(path = '') {
     const base = (CONFIG.API_URL || window.location.origin + '/api').replace(/\/$/, '');
+    return path ? `${base}${path.startsWith('/') ? path : '/' + path}` : base;
+};
+
+window.getApiV1Url = function(path = '') {
+    const base = (CONFIG.API_V1_URL || window.location.origin + '/api/v1').replace(/\/+$/, '');
     return path ? `${base}${path.startsWith('/') ? path : '/' + path}` : base;
 };
 
