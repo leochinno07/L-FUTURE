@@ -8,12 +8,18 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .config import is_managed_deployment
 from .database import get_db
 from .models import SessionRecord, User
 
-JWT_SECRET = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')
+JWT_SECRET = (
+    os.environ.get('JWT_SECRET_KEY')
+    or os.environ.get('JWT_SECRET')
+    or os.environ.get('AUTH_SECRET')
+    or os.environ.get('SECRET_KEY')
+)
 if not JWT_SECRET:
-    if os.environ.get('APP_ENV', '').lower() == 'production':
+    if is_managed_deployment():
         raise RuntimeError('JWT_SECRET_KEY debe configurarse en producción')
     JWT_SECRET = 'local-only-change-before-deploy'
 JWT_ALGORITHM = 'HS256'

@@ -23,8 +23,8 @@ Vercel sirve el frontend y ejecuta FastAPI desde `api/index.py`. SQLite y el dis
 3. En **Settings → Environment Variables**, configura para Production y Preview:
 
    - `APP_ENV=production`
-   - `DATABASE_URL=postgresql+psycopg://...` (incluye SSL según el proveedor)
-   - `JWT_SECRET_KEY` con un valor aleatorio de al menos 32 bytes
+   - `DATABASE_URL=postgresql+psycopg://...` (incluye SSL según el proveedor). También se aceptan `POSTGRES_URL`, `POSTGRES_PRISMA_URL` y `POSTGRES_URL_NON_POOLING`.
+   - `JWT_SECRET_KEY` con un valor aleatorio de al menos 32 bytes (obligatorio también en Preview)
    - `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`
    - `S3_ENDPOINT_URL` y `S3_REGION` (para R2, región `auto`)
    - `ASSET_PUBLIC_BASE_URL=https://...` con el dominio público del bucket

@@ -5,9 +5,16 @@ from typing import Generator
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
+from .config import is_managed_deployment
+
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if os.environ.get('APP_ENV', '').lower() == 'production':
+DATABASE_URL = (
+    os.environ.get('DATABASE_URL')
+    or os.environ.get('POSTGRES_URL')
+    or os.environ.get('POSTGRES_PRISMA_URL')
+    or os.environ.get('POSTGRES_URL_NON_POOLING')
+)
+if is_managed_deployment():
     if not DATABASE_URL:
         raise RuntimeError('DATABASE_URL debe apuntar a una base PostgreSQL persistente en producción')
     if DATABASE_URL.startswith('sqlite:'):
