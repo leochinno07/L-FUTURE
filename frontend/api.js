@@ -40,7 +40,7 @@ async function parseJsonResponse(response) {
 }
 
 async function apiRequest(path, options = {}) {
-  const baseUrl = (window.LF_CONFIG && window.LF_CONFIG.API_URL) ? window.LF_CONFIG.API_URL : (window.location.origin + '/api');
+  const baseUrl = (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL) ? window.LF_CONFIG.API_V1_URL : (window.location.origin + '/api/v1');
   const url = `${baseUrl.replace(/\/$/, '')}${path.startsWith('/') ? path : '/' + path}`;
   const method = (options.method || 'GET').toUpperCase();
   const headers = Object.assign({
@@ -68,44 +68,32 @@ async function apiRequest(path, options = {}) {
   return data;
 }
 
-async function postJson(url, body, retries = 1) {
-  try {
-    const res = await fetchWithTimeout(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      credentials: 'same-origin'
-    });
-    return res.json ? await res.json() : { success: res.ok };
-  } catch (err) {
-    if (retries > 0) return postJson(url, body, retries - 1);
-    throw err;
-  }
-}
-
-const API_BASE = (
-  window.API_BASE_URL ||
-  (window.LF_CONFIG && window.LF_CONFIG.API_URL) ||
-  (location.origin + '/api')
-).replace(/\/+$/, '');
 const API_V1_BASE = (
   (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL) ||
   (location.origin + '/api/v1')
 ).replace(/\/+$/, '');
 
 async function getProyectos() {
-  const response = await fetchWithTimeout(`${API_V1_BASE}/projects`, {
-    headers: getAuthHeaders(),
-    credentials: 'same-origin'
-  });
-  const result = await parseJsonResponse(response);
-  if (!response.ok || !result.success) {
-    return { success: false, data: { message: result.message || 'No se pudieron cargar los proyectos' } };
+  const projects = [];
+  let page = 1;
+  while (true) {
+    const response = await fetchWithTimeout(`${API_V1_BASE}/projects?page=${page}&limit=50`, {
+      headers: getAuthHeaders(),
+      credentials: 'same-origin'
+    });
+    const result = await parseJsonResponse(response);
+    if (!response.ok || !result.success) {
+      return { success: false, data: { message: result.message || 'No se pudieron cargar los proyectos' } };
+    }
+    projects.push(...(result.projects || []));
+    if ((result.projects || []).length < 50) break;
+    page += 1;
   }
-  const proyectos = (result.projects || []).map(project => ({
+  const proyectos = projects.map(project => ({
     id: project.id,
     nombre: project.name,
     descripcion: project.description,
+    tags: project.tags || '',
     estado: project.status,
     tipo: project.type,
     tipo_prenda: project.clothing_type,
@@ -113,21 +101,28 @@ async function getProyectos() {
     thumbnail_url: project.preview_url,
     fecha_creacion: project.created_at,
     fecha_modificacion: project.updated_at,
-    talla: project.talla
+    talla: project.talla,
+    tags: ''
   }));
-  return { success: true, data: { proyectos } };
+  return { success: true, data: { success: true, proyectos } };
 }
 
 async function getElementos(projectId) {
-  const response = await fetchWithTimeout(`${API_V1_BASE}/projects/${projectId}`, {
+  let response = await fetchWithTimeout(`${API_V1_BASE}/projects/${projectId}`, {
     headers: getAuthHeaders(),
     credentials: 'same-origin'
   });
-  const result = await parseJsonResponse(response);
-  if (!response.ok || !result.success) {
-    return { success: false, data: { message: result.message || 'No se pudo cargar el diseño' } };
+  let projectResult = await parseJsonResponse(response);
+  if (!response.ok) {
+    response = await fetchWithTimeout(`${API_V1_BASE}/projects/marketplace/${projectId}`, {
+      credentials: 'same-origin'
+    });
+    projectResult = await parseJsonResponse(response);
   }
-  const scenes = result.project?.design_state?.escenas || [];
+  if (!response.ok || !projectResult.success) {
+    return { success: false, data: { success: false, message: projectResult.message || 'No se pudo cargar el diseño' } };
+  }
+  const scenes = projectResult.project?.design_state?.escenas || [];
   const elementos = scenes.flatMap((scene, sceneIndex) => (scene.elementos || []).map(element => ({
     ...element,
     escena: sceneIndex,
@@ -135,11 +130,54 @@ async function getElementos(projectId) {
     posicion_y: element.y,
     tamano_fuente: element.tamano
   })));
-  return { success: true, data: { elementos } };
+  return { success: true, data: { success: true, elementos, design_state: projectResult.project.design_state } };
+}
+
+async function createProyecto(nombre, descripcion = '', color = '#FFFFFF', talla = 'M') {
+  const result = await apiRequest('/projects', {
+    method: 'POST',
+    body: { nombre, descripcion, color_prenda: color, talla, clothing_type: 'tshirt' },
+    headers: getAuthHeaders()
+  });
+  return { success: result.success, data: { ...result, proyecto_id: result.project?.id } };
+}
+
+async function updateProyecto(projectId, payload = {}) {
+  const update = {};
+  if (payload.nombre !== undefined) update.nombre = payload.nombre;
+  if (payload.descripcion !== undefined) update.descripcion = payload.descripcion;
+  if (payload.tags !== undefined) update.tags = payload.tags;
+  if (payload.estado !== undefined) update.estado = payload.estado;
+  if (payload.color_prenda !== undefined) update.color_prenda = payload.color_prenda;
+  if (payload.talla !== undefined) update.talla = payload.talla;
+  if (payload.tipo_prenda !== undefined) update.clothing_type = payload.tipo_prenda;
+  if (payload.preview_url !== undefined) update.preview_url = payload.preview_url;
+  const result = await apiRequest(`/projects/${projectId}`, {
+    method: 'PUT', body: update, headers: getAuthHeaders()
+  });
+  return { success: result.success, data: { ...result, success: result.success } };
+}
+
+async function deleteProyecto(projectId) {
+  const result = await apiRequest(`/projects/${projectId}`, { method: 'DELETE', headers: getAuthHeaders() });
+  return { success: result.success, data: { ...result, success: result.success } };
+}
+
+async function duplicarProyectoV1(projectId, nombre) {
+  const result = await apiRequest(`/projects/${projectId}/duplicate`, {
+    method: 'POST',
+    body: nombre ? { nombre } : {},
+    headers: getAuthHeaders()
+  });
+  return { success: result.success, data: { ...result, proyecto_id: result.project?.id } };
 }
 
 window.getProyectos = window.getProyectos || getProyectos;
 window.getElementos = window.getElementos || getElementos;
+window.createProyecto = window.createProyecto || createProyecto;
+window.updateProyecto = window.updateProyecto || updateProyecto;
+window.deleteProyecto = window.deleteProyecto || deleteProyecto;
+window.duplicarProyectoV1 = window.duplicarProyectoV1 || duplicarProyectoV1;
 
 window.getAuthToken = window.getAuthToken || getAuthToken;
 window.getAuthHeaders = window.getAuthHeaders || getAuthHeaders;
@@ -147,8 +185,11 @@ window.apiRequest = window.apiRequest || apiRequest;
 window.fetchWithTimeout = window.fetchWithTimeout || fetchWithTimeout;
 
 window.API = window.API || {
-  postProyecto: (data) => apiRequest('/proyectos', { method: 'POST', body: data, headers: getAuthHeaders() }),
-  logError: (data) => postJson(`${API_BASE}/logs`, data, 0),
+  postProyecto: (data) => apiRequest('/projects', { method: 'POST', body: data, headers: getAuthHeaders() }),
+  logError: data => {
+    console.error('L-FUTURE frontend:', data);
+    return Promise.resolve({ success: true });
+  },
   getAuthHeaders,
   getAuthToken,
   apiRequest,

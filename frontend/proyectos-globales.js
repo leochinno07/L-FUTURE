@@ -16,13 +16,22 @@ async function cargarProyectosGlobales() {
 
     try {
         // Llamar al endpoint sin autenticación
-        const API_BASE_URL = window.API_BASE_URL || (location.origin + '/api');
-        const response = await fetch(`${API_BASE_URL}/proyectos/globales`);
+        const API_BASE_URL = window.API_V1_URL || (location.origin + '/api/v1');
+        const response = await fetch(`${API_BASE_URL}/projects/marketplace`);
         const resultado = await response.json();
 
         if (resultado.success) {
+            const marketplaceProjects = (resultado.projects || []).map(project => ({
+                ...project,
+                nombre: project.name,
+                descripcion: project.description,
+                tipo: project.type,
+                color_prenda: project.garment_color,
+                thumbnail_url: project.preview_url,
+                fecha_creacion: project.created_at
+            }));
             // Limitar a los dos proyectos oficiales y añadir specs/precio
-            proyectosGlobales = (resultado.data.proyectos || []).filter((p, i) => i < 2).map((p, idx) => ({
+            proyectosGlobales = marketplaceProjects.filter((p, i) => i < 2).map((p, idx) => ({
                 ...p,
                 especificaciones: idx === 0 ? [
                     'Diseño Oversize',
@@ -194,16 +203,7 @@ async function personalizarProyectoGlobal(proyectoId, nombreOriginal) {
     }
 
     try {
-        const API_BASE_URL = window.API_BASE_URL || (location.origin + '/api');
-        const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/duplicar`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const resultado = await response.json();
-
+        const resultado = await window.duplicarProyectoV1(proyectoId);
         if (resultado.success) {
             alert('¡Proyecto copiado a "Mis Proyectos" exitosamente! Serás redirigido para que puedas editarlo.');
             window.location.href = 'diseños1.0.html';
@@ -278,9 +278,9 @@ function abrirFormularioProyectoGlobal() {
  */
 async function crearProyectoGlobal(nombre, descripcion, color) {
     try {
-        const API = window.API_BASE_URL || (location.origin + '/api');
+        const API = window.API_V1_URL || (location.origin + '/api/v1');
         const token = localStorage.getItem('auth_token');
-        const res = await fetch(`${API}/proyectos`, {
+        const res = await fetch(`${API}/projects`, {
             method: 'POST',
             headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'Authorization': `Bearer ${token}` } : {}),
             body: JSON.stringify({ nombre, descripcion, color_prenda: color, talla: 'M', tipo: 'global' })
@@ -291,7 +291,7 @@ async function crearProyectoGlobal(nombre, descripcion, color) {
             alert('Proyecto global creado exitosamente');
             // Ofrecer al admin subir thumbnail inmediatamente
             try {
-                const pid = resultado.proyecto_id || (resultado.data && resultado.data.proyecto_id);
+                const pid = resultado.project?.id;
                 if (pid) promptToUploadThumbnail(pid);
             } catch(e){ /* ignore */ }
             cargarProyectosGlobales();
@@ -318,21 +318,24 @@ function promptToUploadThumbnail(proyectoId){
             (window.Toast && window.Toast.error) ? window.Toast.error('El thumbnail supera el límite de 5 MB') : alert('El thumbnail supera el límite de 5 MB');
             return;
         }
-        const API = window.API_BASE_URL || (location.origin + '/api');
+        const API = window.API_V1_URL || (location.origin + '/api/v1');
         try{
-            const thumbnail = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(f);
-            });
-            const res = await fetch(`${API}/proyectos/${proyectoId}/thumbnail`, {
+            const form = new FormData();
+            form.append('file', f, f.name);
+            form.append('project_id', String(proyectoId));
+            const upload = await fetch(`${API}/assets/upload`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ thumbnail })
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: form
             });
-            const json = await res.json();
-            if(json && json.success){
+            const uploadJson = await upload.json();
+            if(upload.ok && uploadJson?.success && uploadJson.asset?.file_url){
+                const res = await fetch(`${API}/projects/${proyectoId}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ preview_url: uploadJson.asset.file_url })
+                });
+                if (!res.ok) throw new Error('No se pudo asociar la vista previa al proyecto');
                 (window.Toast && window.Toast.success) ? window.Toast.success('Thumbnail cargado') : console.log('Thumbnail cargado');
                 cargarProyectosGlobales();
             } else {

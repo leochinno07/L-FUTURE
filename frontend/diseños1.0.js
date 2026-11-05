@@ -608,21 +608,14 @@ async function duplicarProyecto(proyectoId) {
         return;
     }
 
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    if (!localStorage.getItem('auth_token')) {
         return Toast.error('Necesitas iniciar sesión para duplicar un proyecto.');
     }
 
     Toast.info('Duplicando proyecto...');
 
     try {
-        const API_BASE_URL = window.API_BASE_URL || (location.origin + '/api');
-        const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/duplicar`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const resultado = await response.json();
+        const resultado = await window.duplicarProyectoV1(proyectoId);
 
         if (resultado.success) {
             Toast.success('¡Proyecto duplicado con éxito!');

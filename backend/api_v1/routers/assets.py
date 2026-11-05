@@ -8,11 +8,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database import BACKEND_DIR, get_db
+from ..config import is_managed_deployment
 from ..models import Asset, ProcessingJob, Project, User
 from ..schemas import ProcessingJobCreate
 from ..security import get_current_user
 from ..storage import delete_remote_asset, public_asset_url, remote_storage_configured, upload_remote_asset
-from backend.uploads import is_valid_image_bytes, safe_name
+try:
+    from backend.uploads import is_valid_image_bytes, safe_name
+except ModuleNotFoundError as error:
+    if error.name != 'backend':
+        raise
+    from uploads import is_valid_image_bytes, safe_name
 
 router = APIRouter(prefix='/assets', tags=['assets'])
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024
@@ -73,7 +79,7 @@ async def upload_asset(
         if use_remote_storage:
             upload_remote_asset(filename, content, actual_mime)
         else:
-            if os.environ.get('APP_ENV', '').lower() == 'production':
+            if is_managed_deployment():
                 raise HTTPException(status_code=503, detail='El almacenamiento persistente de assets no está configurado')
             UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
             final_path = (UPLOADS_DIR / filename).resolve()

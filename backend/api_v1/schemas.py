@@ -160,9 +160,11 @@ class DesignState(StrictModel):
 class ProjectCreate(StrictModel):
     nombre: str = Field(min_length=1, max_length=100)
     descripcion: str | None = Field(default=None, max_length=2000)
+    tags: str | None = Field(default=None, max_length=500)
     color_prenda: str = Field(default='#FFFFFF', pattern=r'^#(?:[\da-fA-F]{3}|[\da-fA-F]{6})$')
     talla: Literal['S', 'M', 'L', 'XL', 'XXL'] | None = None
     clothing_type: Literal['tshirt', 'sweater', 'polo', 'crop-top'] = 'tshirt'
+    tipo: Literal['personal', 'global'] = 'personal'
     base_template_id: int | None = Field(default=None, ge=1)
     estado_diseno: DesignState | None = None
 
@@ -170,9 +172,12 @@ class ProjectCreate(StrictModel):
 class ProjectUpdate(StrictModel):
     nombre: str | None = Field(default=None, min_length=1, max_length=100)
     descripcion: str | None = Field(default=None, max_length=2000)
+    tags: str | None = Field(default=None, max_length=500)
+    estado: Literal['en_progreso', 'completado'] | None = None
     color_prenda: str | None = Field(default=None, pattern=r'^#(?:[\da-fA-F]{3}|[\da-fA-F]{6})$')
     talla: Literal['S', 'M', 'L', 'XL', 'XXL'] | None = None
     clothing_type: Literal['tshirt', 'sweater', 'polo', 'crop-top'] | None = None
+    preview_url: str | None = Field(default=None, max_length=512)
     base_template_id: int | None = Field(default=None, ge=1)
     estado_diseno: DesignState | None = None
 
@@ -181,6 +186,10 @@ class ProjectUpdate(StrictModel):
         if not self.model_fields_set:
             raise ValueError('Se requiere al menos un campo')
         return self
+
+
+class ProjectDuplicate(StrictModel):
+    nombre: str | None = Field(default=None, min_length=1, max_length=100)
 
 
 class TemplateCreate(StrictModel):

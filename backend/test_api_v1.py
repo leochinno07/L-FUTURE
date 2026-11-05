@@ -99,6 +99,7 @@ class FastAPIV1Tests(unittest.TestCase):
         }
         created = self.client.post('/api/v1/projects', headers=headers, json={
             'nombre': 'Diseño API',
+            'tags': 'street,limited',
             'clothing_type': 'tshirt',
             'estado_diseno': state
         })
@@ -113,19 +114,41 @@ class FastAPIV1Tests(unittest.TestCase):
         project = self.client.get('/api/v1/projects/{}'.format(project_id), headers=headers)
         self.assertEqual(project.status_code, 200)
         self.assertEqual(project.json()['project']['design_state'], state)
+        self.assertEqual(project.json()['project']['tags'], 'street,limited')
 
         original_updated_at = project.json()['project']['updated_at']
         updated_state = project.json()['project']['design_state']
         updated_state['escenas'][0]['elementos'][0]['contenido'] = 'Diseño sincronizado'
         update = self.client.put('/api/v1/projects/{}'.format(project_id), headers=headers, json={
-            'estado_diseno': updated_state
+            'estado_diseno': updated_state,
+            'preview_url': '/uploads/preview.png'
         })
         self.assertEqual(update.status_code, 200)
         self.assertEqual(update.json()['project']['design_state'], updated_state)
+        self.assertEqual(update.json()['project']['preview_url'], '/uploads/preview.png')
         self.assertNotEqual(update.json()['project']['updated_at'], original_updated_at)
 
         dashboard = self.client.get('/api/v1/users/dashboard', headers=headers)
         self.assertEqual(dashboard.json()['recent_designs'][0]['design_state'], updated_state)
+
+        published = self.client.post('/api/v1/projects/{}/publish'.format(project_id), headers=headers)
+        self.assertEqual(published.status_code, 200)
+        marketplace = self.client.get('/api/v1/projects/marketplace')
+        self.assertEqual(marketplace.status_code, 200)
+        self.assertEqual(marketplace.json()['projects'][0]['id'], project_id)
+        public_detail = self.client.get('/api/v1/projects/marketplace/{}'.format(project_id))
+        self.assertEqual(public_detail.status_code, 200)
+        self.assertEqual(public_detail.json()['project']['design_state'], updated_state)
+
+        duplicate = self.client.post('/api/v1/projects/{}/duplicate'.format(project_id), headers=headers, json={
+            'nombre': 'Copia para editar'
+        })
+        self.assertEqual(duplicate.status_code, 201)
+        self.assertEqual(duplicate.json()['project']['name'], 'Copia para editar')
+        self.assertEqual(duplicate.json()['project']['design_state'], updated_state)
+
+        removed = self.client.delete('/api/v1/projects/{}'.format(duplicate.json()['project']['id']), headers=headers)
+        self.assertEqual(removed.status_code, 204)
 
         image_bytes = b'\x89PNG\r\n\x1a\n' + b'asset-data'
         upload = self.client.post(

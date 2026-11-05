@@ -5,17 +5,6 @@ import { defineConfig } from 'vite';
 
 const frontendRoot = fileURLToPath(new URL('./frontend', import.meta.url));
 const outputRoot = resolve(frontendRoot, 'dist');
-const backendTarget = process.env.LF_BACKEND_URL || 'http://127.0.0.1:5000';
-const apiProxy = {
-  '/api/v1': {
-    target: process.env.LF_API_V1_URL || 'http://127.0.0.1:8000',
-    changeOrigin: true
-  },
-  '/api': {
-    target: backendTarget,
-    changeOrigin: true
-  }
-};
 const htmlInputs = readdirSync(frontendRoot, { withFileTypes: true })
   .filter(entry => entry.isFile() && entry.name.endsWith('.html'))
   .map(entry => resolve(frontendRoot, entry.name));
@@ -34,20 +23,35 @@ function copyStaticFiles(sourceRoot, destinationRoot) {
   }
 }
 
-export default defineConfig({
-  root: frontendRoot,
-  server: { proxy: apiProxy },
-  preview: { proxy: apiProxy },
-  plugins: [{
-    name: 'copy-static-frontend-files',
-    apply: 'build',
-    closeBundle() {
-      copyStaticFiles(frontendRoot, outputRoot);
+export default defineConfig(({ command }) => {
+  const boundBackendTarget = command === 'serve' ? process.env.BACKEND_URL : undefined;
+  const backendTarget = boundBackendTarget || process.env.LF_BACKEND_URL || 'http://127.0.0.1:5000';
+  const apiProxy = {
+    '/api/v1': {
+      target: boundBackendTarget || process.env.LF_API_V1_URL || 'http://127.0.0.1:8000',
+      changeOrigin: true
+    },
+    '/api': {
+      target: backendTarget,
+      changeOrigin: true
     }
-  }],
-  build: {
-    rollupOptions: {
-      input: htmlInputs
+  };
+
+  return {
+    root: frontendRoot,
+    server: { proxy: apiProxy },
+    preview: { proxy: apiProxy },
+    plugins: [{
+      name: 'copy-static-frontend-files',
+      apply: 'build',
+      closeBundle() {
+        copyStaticFiles(frontendRoot, outputRoot);
+      }
+    }],
+    build: {
+      rollupOptions: {
+        input: htmlInputs
+      }
     }
-  }
+  };
 });

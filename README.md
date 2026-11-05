@@ -31,7 +31,7 @@ Para verificar la API: `python -m unittest backend.test_api_v1`. Para crear una 
 
 ## Publicar en Vercel
 
-La aplicación usa una función Python para FastAPI y el build estático de Vite. **No uses SQLite ni el disco local en Vercel**: las funciones son efímeras. Necesitas PostgreSQL y almacenamiento S3-compatible para que cuentas, diseños e imágenes persistan.
+El proyecto declara dos servicios en `vercel.json`: `app` (Vite) y `backend` (FastAPI). El frontend queda público en `/`; las solicitudes `/api/*` se reescriben al backend, conservando el prefijo `/api/v1` de sus rutas. En `vercel dev`, Vite usa la binding `BACKEND_URL` para su proxy local; en producción el navegador usa el rewrite público y esa URL interna no se incluye en el bundle. **No uses SQLite ni el disco local en Vercel**: las funciones son efímeras. Necesitas PostgreSQL y almacenamiento S3-compatible para que cuentas, diseños e imágenes persistan.
 
 1. Crea una base PostgreSQL gestionada. Copia su URL de conexión; si el proveedor entrega `POSTGRES_URL`, el backend también la reconoce. Asegúrate de que la URL incluya SSL si el proveedor lo exige.
 2. Crea un bucket S3-compatible (por ejemplo, Cloudflare R2), habilita lectura pública de objetos y crea credenciales con permiso de escritura. Guarda el bucket, endpoint, región y URL pública del bucket.
@@ -46,7 +46,7 @@ La aplicación usa una función Python para FastAPI y el build estático de Vite
    ```
 
    Si ya existe un remoto, omite `git remote add origin` y usa `git push`.
-4. En Vercel, selecciona **Add New → Project**, importa el repositorio de GitHub y deja **Root Directory** en `./`. Mantén la configuración de `vercel.json`: build `npm run build`, salida `frontend/dist` y función `api/index.py`.
+4. En Vercel, selecciona **Add New → Project**, importa el repositorio de GitHub y deja **Root Directory** en `./`. Mantén `vercel.json` en la raíz: Vercel construye `app` con `npm run build` y `frontend/dist`, y ejecuta `backend/api/index.py` con las dependencias de `backend/requirements.txt`.
 5. Antes del primer deploy, abre **Project → Settings → Environment Variables** y agrega estas variables. Asígnalas tanto a **Production** como a **Preview**:
 
    - `APP_ENV` = `production`
@@ -63,6 +63,8 @@ La aplicación usa una función Python para FastAPI y el build estático de Vite
 6. Pulsa **Deploy**. En cada cambio posterior, haz push a GitHub para iniciar un nuevo deploy. Si acabas de cambiar variables, usa **Redeploy** para que se apliquen.
 7. Verifica `https://tu-proyecto.vercel.app/api/v1/health`. Después prueba registro, login, crear/guardar/reabrir un diseño y subir una imagen. Si el health responde 502, revisa **Deployments → Functions → Logs**: las causas más comunes son una variable ausente o una URL/credencial de PostgreSQL inválida.
 
+Para probar el enrutamiento de servicios antes del deploy, instala el CLI de Vercel e inicia sesión; desde la raíz ejecuta `vercel dev`. Esto arranca los servicios según `vercel.json` y sus rewrites locales.
+
 El backend crea las tablas al iniciar. Una base PostgreSQL nueva no contiene los usuarios ni diseños guardados en el SQLite local; exporta e importa esos datos por separado si necesitas conservarlos. Los trabajos de eliminación de fondo y preparación DTF se encolan como `queued` y requieren un worker externo para procesarse.
 
 ## Rutas principales
@@ -74,3 +76,5 @@ El backend crea las tablas al iniciar. Una base PostgreSQL nueva no contiene los
 - Marketplace/órdenes: `/api/v1/projects/marketplace`, `/api/v1/orders`
 
 Validación local: `python -m unittest backend.test_api_v1` y `npm run build`.
+
+El frontend publicado se construye desde `frontend/` y sus pantallas activas usan `/api/v1/*`. Las copias antiguas bajo `backend/frontend/` pertenecen al servidor Flask de desarrollo y no se publican con el servicio `app` de Vercel.

@@ -65,6 +65,7 @@ def initialize_schema() -> None:
         },
         'proyectos': {
             'estado_diseno_json': 'TEXT',
+            'tags': 'VARCHAR(500)',
             'tipo_prenda': 'VARCHAR(24)',
             'base_template_id': 'INTEGER REFERENCES plantillas_v1(id) ON DELETE SET NULL'
         }

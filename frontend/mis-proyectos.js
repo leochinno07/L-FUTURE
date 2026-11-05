@@ -414,33 +414,8 @@ async function duplicarProyecto(proyectoId) {
     if (!nuevoNombre) return;
 
     try {
-        // Crear proyecto duplicado
-        const resultado = await createProyecto(
-            nuevoNombre,
-            proyecto.descripcion || 'Copia de ' + proyecto.nombre,
-            proyecto.color_prenda,
-            proyecto.talla
-        );
-
+        const resultado = await duplicarProyectoV1(proyectoId, nuevoNombre);
         if (resultado.success) {
-            const nuevoProyectoId = resultado.data.proyecto_id;
-
-            // Copiar elementos
-            const resultadoElementos = await getElementos(proyectoId);
-            if (resultadoElementos.success) {
-                for (const elemento of resultadoElementos.data.elementos) {
-                    await addElemento(nuevoProyectoId, {
-                        tipo: elemento.tipo,
-                        contenido: elemento.contenido,
-                        posicion_x: elemento.posicion_x,
-                        posicion_y: elemento.posicion_y,
-                        rotacion: elemento.rotacion,
-                        escala: elemento.escala,
-                        color: elemento.color
-                    });
-                }
-            }
-
             alert('Proyecto duplicado exitosamente');
             cargarProyectos();
         }

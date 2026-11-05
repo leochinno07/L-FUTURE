@@ -52,6 +52,7 @@ class Project(Base):
     usuario_id: Mapped[int] = mapped_column(ForeignKey('usuarios.id', ondelete='CASCADE'), nullable=False, index=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Text)
+    tags: Mapped[Optional[str]] = mapped_column(String(500))
     estado: Mapped[str] = mapped_column(String(24), default='en_progreso', server_default='en_progreso')
     tipo: Mapped[str] = mapped_column(String(16), default='personal', server_default='personal')
     color_prenda: Mapped[str] = mapped_column(String(7), default='#FFFFFF', server_default='#FFFFFF')
