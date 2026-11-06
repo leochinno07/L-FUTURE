@@ -19,6 +19,14 @@ Requisitos: Node.js 20.19+ (o 22.12+) y Python 3.10+.
    JWT_SECRET_KEY=local-dev-secret uvicorn backend.api_v1.main:app --host 0.0.0.0 --port 8000
    ```
 
+   Para usar Supabase en lugar de la base SQLite local, copia la URI de **Project Settings → Database → Connect → Session pooler** y pégala cuando Bash la solicite; no queda en el historial:
+
+   ```bash
+   read -rsp 'Supabase DATABASE_URL: ' DATABASE_URL; printf '\n'; export DATABASE_URL
+   ```
+
+   Luego arranca la API con el comando anterior en esa misma terminal. No guardes esa URI en Git ni la envíes al frontend.
+
 3. En otra terminal, desde la raíz, arranca el frontend:
 
    ```bash
@@ -33,7 +41,9 @@ Para verificar la API: `python -m unittest backend.test_api_v1`. Para crear una 
 
 El proyecto declara dos servicios en `vercel.json`: `app` (Vite) y `backend` (FastAPI). El frontend queda público en `/`; las solicitudes `/api/*` se reescriben al backend, conservando el prefijo `/api/v1` de sus rutas. En `vercel dev`, Vite usa la binding `BACKEND_URL` para su proxy local; en producción el navegador usa el rewrite público y esa URL interna no se incluye en el bundle. **No uses SQLite ni el disco local en Vercel**: las funciones son efímeras. Necesitas PostgreSQL y almacenamiento S3-compatible para que cuentas, diseños e imágenes persistan.
 
-1. Crea una base PostgreSQL gestionada. Copia su URL de conexión; si el proveedor entrega `POSTGRES_URL`, el backend también la reconoce. Asegúrate de que la URL incluya SSL si el proveedor lo exige.
+**Si Vercel se configuró seleccionando solo `frontend` y aparece un 500**, ve a **Project → Settings → Build and Deployment** y cambia **Root Directory** a `./` (la raíz del repositorio, donde vive este `vercel.json`); guarda y vuelve a desplegar. La raíz `frontend` por sí sola no incluye la función FastAPI ni los rewrites del multi-servicio.
+
+1. Crea un proyecto en Supabase. En **Project Settings → Database → Connect**, copia la URI de **Session pooler** para `DATABASE_URL` (es la opción adecuada para funciones de Vercel y redes IPv4). Reemplaza el marcador de contraseña; codifica caracteres reservados de la contraseña para URL y conserva `sslmode=require` si aparece en la URI.
 2. Crea un bucket S3-compatible (por ejemplo, Cloudflare R2), habilita lectura pública de objetos y crea credenciales con permiso de escritura. Guarda el bucket, endpoint, región y URL pública del bucket.
 3. Sube el repositorio a GitHub: crea un repositorio vacío, y desde la raíz ejecuta:
 
@@ -50,7 +60,7 @@ El proyecto declara dos servicios en `vercel.json`: `app` (Vite) y `backend` (Fa
 5. Antes del primer deploy, abre **Project → Settings → Environment Variables** y agrega estas variables. Asígnalas tanto a **Production** como a **Preview**:
 
    - `APP_ENV` = `production`
-   - `DATABASE_URL` = URL PostgreSQL (también se aceptan `POSTGRES_URL`, `POSTGRES_PRISMA_URL` o `POSTGRES_URL_NON_POOLING`)
+   - `DATABASE_URL` = URI PostgreSQL de Supabase Session pooler (también se aceptan `POSTGRES_URL`, `POSTGRES_PRISMA_URL` o `POSTGRES_URL_NON_POOLING`)
    - `JWT_SECRET_KEY` = secreto aleatorio largo, distinto para cada ambiente
    - `S3_BUCKET` = nombre del bucket
    - `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` = credenciales del bucket
@@ -66,6 +76,8 @@ El proyecto declara dos servicios en `vercel.json`: `app` (Vite) y `backend` (Fa
 Para probar el enrutamiento de servicios antes del deploy, instala el CLI de Vercel e inicia sesión; desde la raíz ejecuta `vercel dev`. Esto arranca los servicios según `vercel.json` y sus rewrites locales.
 
 El backend crea las tablas al iniciar. Una base PostgreSQL nueva no contiene los usuarios ni diseños guardados en el SQLite local; exporta e importa esos datos por separado si necesitas conservarlos. Los trabajos de eliminación de fondo y preparación DTF se encolan como `queued` y requieren un worker externo para procesarse.
+
+La conexión a Supabase usa PostgreSQL mediante SQLAlchemy y `psycopg`; no requiere un SDK de Supabase en el frontend. Esto configura la base de datos solamente: el inicio de sesión sigue usando la API del proyecto y las imágenes siguen necesitando la configuración S3 indicada arriba.
 
 ## Rutas principales
 
