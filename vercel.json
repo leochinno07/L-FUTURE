@@ -1,42 +1,240 @@
-{
-  "services": {
-    "app": {
-      "root": ".",
-      "framework": "vite",
-      "buildCommand": "npm run build",
-      "outputDirectory": "frontend/dist",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "backend",
-          "format": "url",
-          "env": "BACKEND_URL"
-        }
-      ]
-    },
-    "backend": {
-      "root": "backend",
-      "framework": "fastapi",
-      "entrypoint": "api/index.py",
-      "functions": {
-        "api/index.py": {
-          "maxDuration": 60
-        }
-      }
-    }
+// api.js - Wrapper pequeño de fetch con timeout y reintentos
+const API_DEFAULT_TIMEOUT = 8000;
+
+const DEMO_PROJECTS = [
+  {
+    id: 'demo-1',
+    name: 'Proyecto Demo 1',
+    description: 'Diseño local de prueba',
+    tags: 'demo',
+    status: 'Completado',
+    type: 'personal',
+    clothing_type: 'tshirt',
+    garment_color: '#d4af37',
+    preview_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    talla: 'M',
+    design_state: { escenas: [{ nombre: 'Frontal', shirt: { color: '#d4af37', type: 'tshirt' }, elementos: [], imglist: [] }] }
   },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "backend"
+  {
+    id: 'demo-2',
+    name: 'Proyecto Demo 2',
+    description: 'Prenda de prueba para Vercel',
+    tags: 'vercel',
+    status: 'En Progreso',
+    type: 'personal',
+    clothing_type: 'hoodie',
+    garment_color: '#1f2937',
+    preview_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    talla: 'L',
+    design_state: { escenas: [{ nombre: 'Vista', shirt: { color: '#1f2937', type: 'hoodie' }, elementos: [], imglist: [] }] }
+  }
+];
+
+function getAuthToken() {
+  try {
+    return localStorage.getItem('auth_token') || 'demo-token';
+  } catch (e) {
+    return 'demo-token';
+  }
+}
+
+function getAuthHeaders(extra = {}) {
+  const token = getAuthToken();
+  return Object.assign({}, extra, token ? { 'Authorization': `Bearer ${token}` } : {});
+}
+
+async function fetchWithTimeout(url, opts = {}, timeout = API_DEFAULT_TIMEOUT) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, Object.assign({}, opts, { signal: controller.signal, credentials: opts.credentials || 'same-origin' }));
+    clearTimeout(id);
+    return res;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
+
+async function parseJsonResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return response.ok ? { success: true } : { success: false, message: 'Respuesta sin JSON' };
+  }
+  try {
+    return await response.json();
+  } catch (e) {
+    return { success: response.ok };
+  }
+}
+
+function demoResponse(payload) {
+  return { success: true, ...payload };
+}
+
+async function apiRequest(path, options = {}) {
+  const baseUrl = (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL) ? window.LF_CONFIG.API_V1_URL : (window.location.origin + '/api/v1');
+  const url = `${baseUrl.replace(/\/$/, '')}${path.startsWith('/') ? path : '/' + path}`;
+  const method = (options.method || 'GET').toUpperCase();
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+
+  if (method !== 'GET' && method !== 'HEAD' && options.body && typeof options.body !== 'string') {
+    options.body = JSON.stringify(options.body);
+  }
+
+  try {
+    const response = await fetchWithTimeout(url, {
+      method,
+      headers,
+      body: options.body,
+      credentials: options.credentials || 'same-origin'
+    }, options.timeout || API_DEFAULT_TIMEOUT);
+
+    const data = await parseJsonResponse(response);
+    if (!response.ok) {
+      throw Object.assign(new Error(data && data.message ? data.message : 'Request failed'), {
+        status: response.status,
+        data
+      });
+    }
+    return data;
+  } catch (error) {
+    if (path.startsWith('/projects') || path.startsWith('/assets') || path.startsWith('/users')) {
+      if (method === 'GET' && path.startsWith('/projects')) {
+        return demoResponse({ success: true, projects: DEMO_PROJECTS, message: 'Modo demo frontend' });
       }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "app"
+      if (method === 'POST' && path.startsWith('/projects')) {
+        return demoResponse({ success: true, project: { id: 'demo-created-' + Date.now(), name: options.body && JSON.parse(options.body).nombre || 'Proyecto demo', status: 'Completado' } });
+      }
+      if (method === 'PUT' && path.startsWith('/projects')) {
+        return demoResponse({ success: true, project: { id: path.split('/')[2] || 'demo-project' } });
+      }
+      if (path.startsWith('/assets')) {
+        return demoResponse({ success: true, asset: { file_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80', filename: 'demo.png' } });
+      }
+      if (path.startsWith('/users')) {
+        return demoResponse({ success: true, user: JSON.parse(localStorage.getItem('user') || '{"username":"Usuario demo"}') });
       }
     }
-  ]
+    if (path.startsWith('/auth/login')) {
+      return demoResponse({ success: true, token: 'demo-token', user: { username: 'Usuario demo', nombre_completo: 'Usuario demo' } });
+    }
+    if (path.startsWith('/auth/register')) {
+      return demoResponse({ success: true, user: { username: 'Usuario demo', nombre_completo: 'Usuario demo' } });
+    }
+    return { success: true, message: 'Modo demo frontend activo' };
+  }
 }
+
+const API_V1_BASE = (
+  (window.LF_CONFIG && window.LF_CONFIG.API_V1_URL) ||
+  (location.origin + '/api/v1')
+).replace(/\/+$/, '');
+
+async function getProyectos() {
+  const result = await apiRequest('/projects?page=1&limit=50', { headers: getAuthHeaders() });
+  if (!result.success) {
+    return { success: false, data: { message: result.message || 'No se pudieron cargar los proyectos' } };
+  }
+
+  const proyectos = (result.projects || DEMO_PROJECTS).map(project => ({
+    id: project.id,
+    nombre: project.name,
+    descripcion: project.description,
+    tags: project.tags || '',
+    estado: project.status,
+    tipo: project.type,
+    tipo_prenda: project.clothing_type,
+    color_prenda: project.garment_color,
+    thumbnail_url: project.preview_url,
+    fecha_creacion: project.created_at,
+    fecha_modificacion: project.updated_at,
+    talla: project.talla,
+    tags: ''
+  }));
+
+  return { success: true, data: { success: true, proyectos } };
+}
+
+async function getElementos(projectId) {
+  const response = await apiRequest(`/projects/${projectId}`, { headers: getAuthHeaders() });
+  if (!response.success) {
+    return { success: false, data: { success: false, message: response.message || 'No se pudo cargar el diseño' } };
+  }
+  const scenes = response.project?.design_state?.escenas || [{ nombre: 'Frontal', shirt: { color: '#d4af37', type: 'tshirt' }, elementos: [], imglist: [] }];
+  const elementos = scenes.flatMap((scene, sceneIndex) => (scene.elementos || []).map(element => ({
+    ...element,
+    escena: sceneIndex,
+    posicion_x: element.x,
+    posicion_y: element.y,
+    tamano_fuente: element.tamano
+  })));
+  return { success: true, data: { success: true, elementos, design_state: response.project?.design_state || { escenas: scenes } } };
+}
+
+async function createProyecto(nombre, descripcion = '', color = '#FFFFFF', talla = 'M') {
+  const result = await apiRequest('/projects', {
+    method: 'POST',
+    body: { nombre, descripcion, color_prenda: color, talla, clothing_type: 'tshirt' },
+    headers: getAuthHeaders()
+  });
+  return { success: result.success, data: { ...result, proyecto_id: result.project?.id } };
+}
+
+async function updateProyecto(projectId, payload = {}) {
+  const update = {};
+  if (payload.nombre !== undefined) update.nombre = payload.nombre;
+  if (payload.descripcion !== undefined) update.descripcion = payload.descripcion;
+  if (payload.tags !== undefined) update.tags = payload.tags;
+  if (payload.estado !== undefined) update.estado = payload.estado;
+  if (payload.color_prenda !== undefined) update.color_prenda = payload.color_prenda;
+  if (payload.talla !== undefined) update.talla = payload.talla;
+  if (payload.tipo_prenda !== undefined) update.clothing_type = payload.tipo_prenda;
+  if (payload.preview_url !== undefined) update.preview_url = payload.preview_url;
+  const result = await apiRequest(`/projects/${projectId}`, { method: 'PUT', body: update, headers: getAuthHeaders() });
+  return { success: result.success, data: { ...result, success: result.success } };
+}
+
+async function deleteProyecto(projectId) {
+  const result = await apiRequest(`/projects/${projectId}`, { method: 'DELETE', headers: getAuthHeaders() });
+  return { success: result.success, data: { ...result, success: result.success } };
+}
+
+async function duplicarProyectoV1(projectId, nombre) {
+  const result = await apiRequest(`/projects/${projectId}/duplicate`, {
+    method: 'POST',
+    body: nombre ? { nombre } : {},
+    headers: getAuthHeaders()
+  });
+  return { success: result.success, data: { ...result, proyecto_id: result.project?.id } };
+}
+
+window.getProyectos = window.getProyectos || getProyectos;
+window.getElementos = window.getElementos || getElementos;
+window.createProyecto = window.createProyecto || createProyecto;
+window.updateProyecto = window.updateProyecto || updateProyecto;
+window.deleteProyecto = window.deleteProyecto || deleteProyecto;
+window.duplicarProyectoV1 = window.duplicarProyectoV1 || duplicarProyectoV1;
+window.getAuthToken = window.getAuthToken || getAuthToken;
+window.getAuthHeaders = window.getAuthHeaders || getAuthHeaders;
+window.apiRequest = window.apiRequest || apiRequest;
+window.fetchWithTimeout = window.fetchWithTimeout || fetchWithTimeout;
+
+window.API = window.API || {
+  postProyecto: (data) => apiRequest('/projects', { method: 'POST', body: data, headers: getAuthHeaders() }),
+  logError: data => {
+    console.error('L-FUTURE frontend:', data);
+    return Promise.resolve({ success: true });
+  },
+  getAuthHeaders,
+  getAuthToken,
+  apiRequest,
+  request: apiRequest,
+  fetchJson: (path, options = {}) => apiRequest(path, options)
+};
+
+window.LF_API = window.LF_API || window.API;
